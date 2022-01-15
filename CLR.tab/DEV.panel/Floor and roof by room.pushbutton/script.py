@@ -73,7 +73,7 @@ chosen_place_floor = form.values["place_floor"]
 #Crop
 a = True
 if a == True:
-    chosen_crop_offset = 40
+    chosen_crop_offset = 100
 else:
     chosen_crop_offset = 0
 
@@ -87,16 +87,15 @@ with revit.Transaction("Create roof and floor", revit.doc):
             room_level_id = room.Level
             room_boundary = room.GetBoundarySegments(room_boundary_options)[0]
             room_curves = CurveArray()
-            
+            normal = XYZ.BasisZ
+
             for boundary_segment in room_boundary:
                 crv = boundary_segment.GetCurve()
-                #print(crv)
                 room_curves.Append(crv)
-            normal = XYZ.BasisZ
-            
+
             #create floors
             if chosen_place_floor:
-                newFlor = revit.doc.Create.NewFloor( room_curves, chosen_floor, chosen_floor_level, False, normal )
+                newFlor = revit.doc.Create.NewFloor(room_curves, chosen_floor, chosen_floor_level, False, normal )
                 flOffsetFromLvl = newFlor.get_Parameter(DB.BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM).Set(0)
             
             #create roofs
@@ -104,5 +103,3 @@ with revit.Transaction("Create roof and floor", revit.doc):
                 mcArray = clr.StrongBox[ModelCurveArray](ModelCurveArray())		
                 newRof = revit.doc.Create.NewFootPrintRoof(room_curves, chosen_roof_level, chosen_roof_type, mcArray)
                 rfOffsetFromLvl = newRof.get_Parameter(DB.BuiltInParameter.ROOF_LEVEL_OFFSET_PARAM).Set(0)
-
-
