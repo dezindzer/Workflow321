@@ -38,15 +38,23 @@ floors_dict = {'{}: {}'.format(fl.FamilyName, revit.query.get_name(fl)): fl for 
 
 #form
 components = [
+    
+    Label ("Place Roofs"),
+    CheckBox(name="place_roof", checkbox_text="", default=False),
     Label ("Select Roof Type"),
     ComboBox(name="rf", options=sorted(roofType_dict), default="Sloped Glazing: 600x600 Armstrong"),
     Label("Select Roof Level"),
     ComboBox(name="rflvl", options=sorted(levels_roof_dict), default="+3.00: +3.00"),
+    
     Separator(),
+    
+    Label ("Place Floor"),
+    CheckBox(name="place_floor", checkbox_text="", default=False),
     Label("Select Floor Type"),
     ComboBox(name="fl", options=sorted(floors_dict), default="Floor: Clean room floor"),
     Label("Select Floor Level"),
     ComboBox(name="fllvl", options=sorted(levels_floor_dict), default="±0.00: ±0.00"),
+    
     Separator(),
     Label(""),
     Button("Ok")
@@ -59,6 +67,9 @@ chosen_floor = floors_dict[form.values["fl"]]
 chosen_roof_level = levels_roof_dict[form.values["rflvl"]]
 chosen_floor_level = levels_floor_dict[form.values["fllvl"]]
 
+chosen_place_roof = form.values["place_roof"]
+chosen_place_floor = form.values["place_floor"]
+
 #Crop
 a = True
 if a == True:
@@ -70,25 +81,28 @@ else:
 with revit.Transaction("Create roof and floor", revit.doc):
     
     room_boundary_options = SpatialElementBoundaryOptions()
-
     for room in rooms:
-        room_level_id = room.Level
-        room_boundary = room.GetBoundarySegments(room_boundary_options)[0]
-        room_curves = CurveArray()
         
-        for boundary_segment in room_boundary:
-            crv = boundary_segment.GetCurve()
-            #print(crv)
-            room_curves.Append(crv)
-        normal = XYZ.BasisZ
-        
-        #create floors
-        newFlor = revit.doc.Create.NewFloor( room_curves, chosen_floor, chosen_floor_level, False, normal )
-        flOffsetFromLvl = newFlor.get_Parameter(DB.BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM).Set(0)
-        
-        #create roofs
-        mcArray = clr.StrongBox[ModelCurveArray](ModelCurveArray())		
-        newRof = revit.doc.Create.NewFootPrintRoof(room_curves, chosen_roof_level, chosen_roof_type, mcArray)
-        rfOffsetFromLvl = newRof.get_Parameter(DB.BuiltInParameter.ROOF_LEVEL_OFFSET_PARAM).Set(0)
+        if room.Area > 0:
+            room_level_id = room.Level
+            room_boundary = room.GetBoundarySegments(room_boundary_options)[0]
+            room_curves = CurveArray()
+            
+            for boundary_segment in room_boundary:
+                crv = boundary_segment.GetCurve()
+                #print(crv)
+                room_curves.Append(crv)
+            normal = XYZ.BasisZ
+            
+            #create floors
+            if chosen_place_floor:
+                newFlor = revit.doc.Create.NewFloor( room_curves, chosen_floor, chosen_floor_level, False, normal )
+                flOffsetFromLvl = newFlor.get_Parameter(DB.BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM).Set(0)
+            
+            #create roofs
+            if chosen_place_roof:  
+                mcArray = clr.StrongBox[ModelCurveArray](ModelCurveArray())		
+                newRof = revit.doc.Create.NewFootPrintRoof(room_curves, chosen_roof_level, chosen_roof_type, mcArray)
+                rfOffsetFromLvl = newRof.get_Parameter(DB.BuiltInParameter.ROOF_LEVEL_OFFSET_PARAM).Set(0)
 
 
