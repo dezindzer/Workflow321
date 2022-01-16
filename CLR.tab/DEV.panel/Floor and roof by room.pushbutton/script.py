@@ -4,7 +4,7 @@ from Autodesk.Revit.DB import Element, XYZ, CurveArray, ModelCurveArray, Spatial
 from pyrevit import revit, DB, script, HOST_APP
 from pyrevit.revit.db import query
 from rpw.ui.forms import FlexForm, Label, TextBox, Button, ComboBox, Separator, CheckBox
-from Autodesk.Revit import Exceptions
+from Autodesk.Revit import Exceptions, Creation
 
 def find_by_class_and_name(dbItem, namez):
 
@@ -40,7 +40,7 @@ floors_dict = {'{}: {}'.format(fl.FamilyName, revit.query.get_name(fl)): fl for 
 components = [
     
     Label ("Place Roofs"),
-    CheckBox(name="place_roof", checkbox_text="", default=False),
+    CheckBox(name="place_roof", checkbox_text="", default=True),
     Label ("Select Roof Type"),
     ComboBox(name="rf", options=sorted(roofType_dict), default="Sloped Glazing: 600x600 Armstrong"),
     Label("Select Roof Level"),
@@ -70,13 +70,24 @@ chosen_floor_level = levels_floor_dict[form.values["fllvl"]]
 chosen_place_roof = form.values["place_roof"]
 chosen_place_floor = form.values["place_floor"]
 
+foot = 304.8 #jebem ih u usta imperialistička
+
+# dodati if petlju ukoliko je sloped glazing
+# offset od plafona
+# naši paneli su FamilySymbol i to komplikuje stvari
+# defaultRoofPanel = chosen_roof_type.get_Parameter(DB.BuiltInParameter.AUTO_PANEL)	
+# print(defaultRoofPanel.AsElementId())
+# getRoofPanelType = revit.doc.GetElement(defaultRoofPanel.AsElementId())
+# print(getRoofPanelType)
+# getThikness = getRoofPanelType.get_Parameter(DB.BuiltInParameter.CURTAIN_WALL_SYSPANEL_THICKNESS).AsDouble()
+# print(getThikness)
+
 #Crop
 a = True
 if a == True:
-    chosen_crop_offset = 100
+    chosen_crop_offset = -40
 else:
     chosen_crop_offset = 0
-
 
 with revit.Transaction("Create roof and floor", revit.doc):
     
@@ -87,19 +98,26 @@ with revit.Transaction("Create roof and floor", revit.doc):
             room_level_id = room.Level
             room_boundary = room.GetBoundarySegments(room_boundary_options)[0]
             room_curves = CurveArray()
+            roof_curves = DB.CurveLoop()
             normal = XYZ.BasisZ
-
+                        
             for boundary_segment in room_boundary:
                 crv = boundary_segment.GetCurve()
                 room_curves.Append(crv)
-
-            #create floors
-            if chosen_place_floor:
+                roof_curves.Append(crv)
+                crvStart = crv.GetEndPoint(0)
+                crvEnd = crv.GetEndPoint(1)
+                inside = DB.XYZ(0, 0, 1)
+                ccud = DB.CurveLoop.CreateViaOffset(roof_curves, chosen_crop_offset/foot, inside) #Create floor curve loop
+                roofCurveArray = CurveArray() #Initialize the curve array
+                for c in ccud: #Append the floor curves to the curve array
+                    roofCurveArray.Append(c)
+                
+            if chosen_place_floor: #create floors
                 newFlor = revit.doc.Create.NewFloor(room_curves, chosen_floor, chosen_floor_level, False, normal )
                 flOffsetFromLvl = newFlor.get_Parameter(DB.BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM).Set(0)
             
-            #create roofs
-            if chosen_place_roof:  
+            if chosen_place_roof: #create roofs
                 mcArray = clr.StrongBox[ModelCurveArray](ModelCurveArray())		
-                newRof = revit.doc.Create.NewFootPrintRoof(room_curves, chosen_roof_level, chosen_roof_type, mcArray)
-                rfOffsetFromLvl = newRof.get_Parameter(DB.BuiltInParameter.ROOF_LEVEL_OFFSET_PARAM).Set(0)
+                newRof = revit.doc.Create.NewFootPrintRoof(roofCurveArray, chosen_roof_level, chosen_roof_type, mcArray)
+                rfOffsetFromLvl = newRof.get_Parameter(DB.BuiltInParameter.ROOF_LEVEL_OFFSET_PARAM).Set(32/foot)

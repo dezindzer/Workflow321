@@ -138,7 +138,7 @@ for room in rooms:
         room_location = room.Location.Point
         roomTagLocation = DB.UV(room_location.X, room_location.Y*1.035)
         roomId = DB.LinkElementId(room.Id)
-
+        
         with revit.TransactionGroup("Drawing on Sheet " + room.Number, revit.doc):
         
             with revit.Transaction("Create Sheet " + room.Number, revit.doc):
@@ -151,7 +151,7 @@ for room in rooms:
                 osnova = DB.ViewPlan.Create(revit.doc, floor_plan_type.Id, level.Id)
                 osnova.Scale = view_scale
                 osnova.CropBoxActive = True
-
+                
                 # Create Ceiling Plan
                 plafon = DB.ViewPlan.Create(revit.doc, ceiling_plan_type.Id, level.Id)
                 plafon.Scale = view_scale
@@ -169,21 +169,18 @@ for room in rooms:
                     elevation_name = room.Number + separator + imeSobe + " - " + elevation_count[i]
                     while helper.get_view(elevation_name):
                         elevation_name = elevation_name + " Copy 1"
-
+                    
                     elevation.Name = elevation_name
                     elevations_col.append(elevation)
                     helper.set_anno_crop(elevation)
                     erd = elevation.RightDirection
-                    print(elevation.Name)
-                    print(erd)
-
-
+                    #print(elevation.Name)
+                    #print(erd)
                     # ELEVATION TAG
                     if chosen_tag_elevation == True:
                         wallInElevation = DB.FilteredElementCollector(revit.doc, elevation.Id).WhereElementIsNotElementType().OfCategory(DB.BuiltInCategory.OST_CurtainWallPanels).ToElements()
                         erd = elevation.RightDirection 
                         #print(erd)
-
                         #print(wallInElevation)
                         for e in wallInElevation:
                             d = e.FacingOrientation
@@ -193,23 +190,9 @@ for room in rooms:
                             wallSideFacing = d.X
                             erdY = erd.Y
                             
-# 01 - test - D Copy 1 Copy 1
-# (0.000000000, 1.000000000, 0.000000000)
-# 01 - test - A Copy 1 Copy 1
-# (1.000000000, 0.000000000, 0.000000000)
-# 01 - test - B Copy 1 Copy 1
-# (0.000000000, -1.000000000, 0.000000000)
-# 01 - test - C Copy 1 Copy 1
-# (-1.000000000, 0.000000000, 0.000000000)                        
-                            
-                            DB.XYZ(0, 0, 0), #D
-                            
-                            
                             testerdx = erdX == wallFrontFacing
                             testerdy = erdY == wallSideFacing
                             
-                            #print(testerdx)
-
                             if testerdx != 0:
                                 familyInstanceRef = DB.Reference(e)
                                 wallPanelLocation = GetCenterPoint(e) 
@@ -220,7 +203,7 @@ for room in rooms:
                                 wallPanelLocation = GetCenterPoint(e) 
                                 createElevationTag = DB.IndependentTag.Create(revit.doc, elevation.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, DB.TagOrientation.Horizontal, wallPanelLocation)
                                 createElevationTag.ChangeTypeId(chosen_elevationTag.Id)
-   
+            
             # find crop box element (method with transactions, must be outside transaction)
             #crop_box_el = helper.find_crop_box(osnova)
             with revit.Transaction("Crop Plan", revit.doc):
@@ -288,7 +271,7 @@ for room in rooms:
                                 tagOrientation = DB.TagOrientation.Vertical
                             else:
                                 tagOrientation = DB.TagOrientation.Horizontal
-
+                            
                             familyInstanceRef = DB.Reference(e)
                             wallPanelLocation = GetCenterPoint(e)    
                             createWallTag = DB.IndependentTag.Create(revit.doc, osnova.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientation, wallPanelLocation)
@@ -302,6 +285,5 @@ for room in rooms:
                         createRoomTag.ChangeTypeId(chosen_roomTag.Id)	   
                     else:
                         pass
-                    
-
+                
                 revit.doc.Regenerate()
