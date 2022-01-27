@@ -42,9 +42,9 @@ components = [
     Label ("Place Roofs"),
     CheckBox(name="place_roof", checkbox_text="", default=True),
     Label ("Select Roof Type"),
-    ComboBox(name="rf", options=sorted(roofType_dict), default="Sloped Glazing: 600x600 Armstrong"),
+    ComboBox(name="rf", options=sorted(roofType_dict)), #default="Sloped Glazing: 600x600 Armstrong"),
     Label("Select Roof Level"),
-    ComboBox(name="rflvl", options=sorted(levels_roof_dict), default="+3.00: +3.00"),
+    ComboBox(name="rflvl", options=sorted(levels_roof_dict)), #default="+3.00: +3.00"),
     
     Separator(),
     
