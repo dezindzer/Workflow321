@@ -6,7 +6,6 @@ from Autodesk.Revit import Exceptions
 from rpw import ui
 output = script.get_output()
 
-
 tits = "Flipped Doors"
 pogledi3D = DB.FilteredElementCollector(revit.doc).OfClass(DB.View3D)
 
@@ -53,11 +52,10 @@ with revit.Transaction(tits, revit.doc):
         name = query.get_name(door) 
         mark = query.get_mark(door)
         revitID = DB.Element.Id.GetValue(door)
-        if mark == "":
+        if mark == "" or mark == None:
             mark = ""
         else:
             mark = " Mark " + mark + " - "
-        #print(door) 
         prefix = 'WD'
         tkVrata = name.startswith(prefix) 
         if tkVrata == True:
