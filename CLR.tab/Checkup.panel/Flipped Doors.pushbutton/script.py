@@ -53,7 +53,7 @@ with revit.Transaction(tits, revit.doc):
         name = query.get_name(door) 
         mark = query.get_mark(door)
         revitID = DB.Element.Id.GetValue(door)
-        if mark == "":
+        if mark == "" or mark == None:
             mark = ""
         else:
             mark = " Mark " + mark + " - "
