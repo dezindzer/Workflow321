@@ -15,10 +15,10 @@ type: extension
 #   - ExtensionName
 #   - ...
 
-name: Termovent Cleanroom addons
+name: Workflow321 addons
 description: Addons made for fun!
 author: Nikola Markovic
 author_profile: https://dezindzer.com
-url: https://termovent.rs
-website: https://dezindzer.com
-image: https://ein.sh/pyRevit/pyRevitLogo.svg
+url: http://dezindzer.com
+website: http://dezindzer.com
+image: http://dezindzer.com/res/Workflow321.svg
