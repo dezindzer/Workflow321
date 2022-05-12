@@ -13,12 +13,11 @@ type: extension
 # dependencies:
 #   - ExtensionName
 #   - ExtensionName
-#   - ...
 
 name: Workflow321 addons
-description: Addons made for fun!
+description: Addons made for fun! Some are mine, some are by others.
 author: Nikola Markovic
 author_profile: https://dezindzer.com
-url: http://dezindzer.com
+url: https://github.com/dezindzer/Workflow321.extension
 website: http://dezindzer.com
 image: http://dezindzer.com/res/Workflow321.svg
