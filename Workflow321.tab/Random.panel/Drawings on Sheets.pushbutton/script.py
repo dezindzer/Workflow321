@@ -14,7 +14,8 @@ from itertools import izip
 from rpw import ui
 from rpw.ui.forms import FlexForm, Label, TextBox, Button, ComboBox, Separator, CheckBox
 from Autodesk.Revit import Exceptions
-import helper, math, units
+import helper, math, units, sys
+
 version = HOST_APP.version
 
 def GetCenterPoint(ele):
@@ -54,6 +55,7 @@ ceiling_plan_type = [vt for vt in svaGledista.WhereElementIsElementType() if vt.
 elevation_type = [vt for vt in svaGledista.WhereElementIsElementType() if vt.FamilyName == "Elevation"][1] 
 allViews = DB.FilteredElementCollector(revit.doc).OfClass(DB.View).ToElements()
 firstView = allViews[1] # print(firstView)  print(DB.Element.Name.GetValue(firstView))
+#print(DB.Element.Name.GetValue(firstView))
 separator = " - "
 view_scale = 50
 
@@ -64,6 +66,7 @@ if units.is_metric(revit.doc):
 else:
     unit_sym = "Crop Offset [decimal inches]"
     default_crop_offset = 9.0
+
 
 
 
@@ -129,26 +132,34 @@ pogledi_poz = [
     DB.XYZ(-Xx, Yy, 0), #C
 ]
 
-for room in rooms:  
-    if room.Area > 0:
-        imeSobe = room.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString()
+if not rooms:
+	sys.exit()
+rmcnt = [rmc for rmc in rooms if rmc.Area > 0]
+#print(rmcnt)
+max_value = len(rmcnt)
+counter = 0
+
+with forms.ProgressBar(title='Creating Sheet ... ({value} of {max_value})') as pb:
+    for eRoom in rmcnt:  
+        counter = counter + 1
+        imeSobe = eRoom.get_Parameter(DB.BuiltInParameter.ROOM_NAME).AsString()
         for iS in imeSobe:
             if imeSobe == "Room":
                 imeSobe = ""
                 separator = " "
-        level = room.Level
-        room_location = room.Location.Point
+        level = eRoom.Level
+        room_location = eRoom.Location.Point
         roomTagLocation = DB.UV(room_location.X, room_location.Y*1.035)
-        roomId = DB.LinkElementId(room.Id)
+        roomId = DB.LinkElementId(eRoom.Id)
         
-        with revit.TransactionGroup("Drawing on Sheet " + room.Number, revit.doc):
+        with revit.TransactionGroup("Drawing on Sheet " + eRoom.Number, revit.doc):
         
-            with revit.Transaction("Create Sheet " + room.Number, revit.doc):
-                sheet = helper.create_sheet("04 - " + str(sheet_number_start), room.Number + imeSobe, chosen_tb.Id)
+            with revit.Transaction("Create Sheet " + eRoom.Number, revit.doc):
+                sheet = helper.create_sheet("04 - " + str(sheet_number_start), eRoom.Number + imeSobe, chosen_tb.Id)
                 katcrteza = sheet.LookupParameter("KATEGORIJA CRTEZA")
                 katcrteza.Set('04 Pogledi')
                                 
-            with revit.Transaction("Create Room" + room.Number, revit.doc):
+            with revit.Transaction("Create Room" + eRoom.Number, revit.doc):
                 # Create Floor Plan
                 osnova = DB.ViewPlan.Create(revit.doc, floor_plan_type.Id, level.Id)
                 osnova.Scale = view_scale
@@ -169,7 +180,7 @@ for room in rooms:
                         elevation = new_marker.CreateElevation(revit.doc, firstView.Id, i)
                         elevation.Scale = view_scale
                         # Rename elevations
-                        elevation_name = room.Number + separator + imeSobe + " - " + elevation_count[i]
+                        elevation_name = eRoom.Number + separator + imeSobe + " - " + elevation_count[i]
                         while helper.get_view(elevation_name):
                             elevation_name = elevation_name + " Copy 1"
                         
@@ -212,7 +223,7 @@ for room in rooms:
             # find crop box element (method with transactions, must be outside transaction)
             #crop_box_el = helper.find_crop_box(osnova)
             with revit.Transaction("Crop Plan", revit.doc):
-                room_boundaries = helper.get_room_bound(room)
+                room_boundaries = helper.get_room_bound(eRoom)
                 if room_boundaries:
                     # try offsetting boundaries (to include walls in plan view)
                     try:
@@ -228,12 +239,12 @@ for room in rooms:
                     except:
                         revit.doc.Regenerate()
                         # room bbox in this view
-                        new_bbox = room.get_BoundingBox(osnova)
+                        new_bbox = eRoom.get_BoundingBox(osnova)
                         osnova.CropBox = new_bbox
                         plafon.CropBox = new_bbox
                 # Rename Floor Plan
-                osnova_name = room.Number + separator + imeSobe + " - Osnova"
-                plafon_name = room.Number + separator + imeSobe + " - Plafon"
+                osnova_name = eRoom.Number + separator + imeSobe + " - Osnova"
+                plafon_name = eRoom.Number + separator + imeSobe + " - Plafon"
 
                 while helper.get_view(osnova_name):
                     osnova_name = osnova_name + " Copy 1"
@@ -290,5 +301,5 @@ for room in rooms:
                         createRoomTag.ChangeTypeId(chosen_roomTag.Id)	   
                     else:
                         pass
-                
                 revit.doc.Regenerate()
+        pb.update_progress(counter, max_value)
