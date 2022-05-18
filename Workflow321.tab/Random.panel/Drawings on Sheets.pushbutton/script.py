@@ -1,4 +1,5 @@
 # This Python file uses the following encoding: utf-8
+# inspiration and big part of the code is done by pyChilizer
 
 ### TO DO ###
 ### dodati filter za ISO
@@ -13,39 +14,8 @@ from itertools import izip
 from rpw import ui
 from rpw.ui.forms import FlexForm, Label, TextBox, Button, ComboBox, Separator, CheckBox
 from Autodesk.Revit import Exceptions
-import helper
+import helper, math, units
 version = HOST_APP.version
-
-def is_metric(doc):
-    if version == "2020":
-        display_units = DB.Document.GetUnits(doc).GetFormatOptions(DB.UnitType.UT_Length).DisplayUnits
-        metric_units = [
-            DB.DisplayUnitType.DUT_METERS,
-            DB.DisplayUnitType.DUT_CENTIMETERS,
-            DB.DisplayUnitType.DUT_DECIMETERS,
-            DB.DisplayUnitType.DUT_MILLIMETERS,
-            DB.DisplayUnitType.DUT_METERS_CENTIMETERS
-        ]
-        if display_units in set(metric_units):
-            return True
-        else:
-            return False
-    if version == "2022":
-        display_units = DB.Document.GetUnits(doc).GetFormatOptions(DB.SpecTypeId.Length)
-        metric_units = [
-            DB.UnitTypeId.Meters,
-            DB.UnitTypeId.Centimeters,
-            DB.UnitTypeId.Decimeters,
-            DB.UnitTypeId.Millimeters,
-            DB.UnitTypeId.MetersCentimeters	
-        ]
-        if display_units in set(metric_units):
-            return True
-        else:
-            return False
-    else:
-        print("Verzija revita nije podržana")
-
 
 def GetCenterPoint(ele):
     bBox = ele.get_BoundingBox(None)
@@ -88,17 +58,13 @@ separator = " - "
 view_scale = 50
 
 # get units for Crop Offset variable
-if version == "2020":
-    display_units = DB.Document.GetUnits(revit.doc).GetFormatOptions(DB.UnitType.UT_Length).DisplayUnits
-    if helper.is_metric(revit.doc):
-        unit_sym = "Crop Offset [mm]"
-        default_crop_offset = 350
-    else:
-        unit_sym = "Crop Offset [decimal inches]"
-        default_crop_offset = 9.0
-if version == "2022":
-        unit_sym = "Crop Offset [mm]"
-        default_crop_offset = 350
+if units.is_metric(revit.doc):
+    unit_sym = "Crop Offset [mm]"
+    default_crop_offset = 350.0
+else:
+    unit_sym = "Crop Offset [decimal inches]"
+    default_crop_offset = 9.0
+
 
 
 components = [
@@ -132,31 +98,10 @@ components = [
     Button("Ok")
 ]
 
-def correct_input_units(val):
-    import re
-    try:
-        digits = float(val)
-    except ValueError:
-        # format the string using regex
-        digits = re.findall("[0-9.]+", val)[0]
-        if is_metric(revit.doc):
-            if version == "2020":
-                return DB.UnitUtils.ConvertToInternalUnits(float(digits), DB.DisplayUnitType.DUT_MILLIMETERS)
-            if version == "2022":
-                return DB.UnitUtils.ConvertToInternalUnits(float(digits), DB.UnitTypeId.Millimeters)
-        else:
-            if version == "2020":
-                return DB.UnitUtils.ConvertToInternalUnits(float(digits), DB.DisplayUnitType.DUT_DECIMAL_INCHES)
-            if version == "2022":
-                return DB.UnitUtils.ConvertToInternalUnits(float(digits), DB.UnitTypeId.Inches )
-
-
-
-
 form = FlexForm("View Settings", components)
 form.show()
 sheet_number_start = 1
-chosen_crop_offset = correct_input_units(form.values["crop_offset"])
+chosen_crop_offset = units.correct_input_units(form.values["crop_offset"],  revit.doc)
 
 chosen_tb = tblock_dict[form.values["tb"]]
 chosen_vt_floor_plan = osnova_dict[form.values["vt_floor_plans"]]

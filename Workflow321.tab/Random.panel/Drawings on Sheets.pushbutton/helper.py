@@ -41,13 +41,6 @@ def select_rooms_filter():
         forms.alert("Cancelled", ok=True, warn_icon=False, exitscript=True)
 
 
-def convert_length_to_internal(from_units):
-    # convert length units from project  to internal
-    d_units = DB.Document.GetUnits(revit.doc).GetFormatOptions(DB.UnitType.UT_Length).DisplayUnits
-    converted = DB.UnitUtils.ConvertToInternalUnits(from_units, d_units)
-    return converted
-
-
 def param_set_by_cat(cat):
     # get all project type parameters of a given category
     # can be used to gather parameters for UI selection
@@ -332,54 +325,7 @@ def apply_vt(v, vt):
         v.ViewTemplateId = vt.Id
     return
 
-
-def is_metric(doc):
-    if version == "2020":
-        display_units = DB.Document.GetUnits(doc).GetFormatOptions(DB.UnitType.UT_Length).DisplayUnits
-        metric_units = [
-            DB.DisplayUnitType.DUT_METERS,
-            DB.DisplayUnitType.DUT_CENTIMETERS,
-            DB.DisplayUnitType.DUT_DECIMETERS,
-            DB.DisplayUnitType.DUT_MILLIMETERS,
-            DB.DisplayUnitType.DUT_METERS_CENTIMETERS
-        ]
-        if display_units in set(metric_units):
-            return True
-        else:
-            return False
-    else:
-        if version == "2022":
-            display_units = DB.Document.GetUnits(doc).GetFormatOptions(DB.SpecTypeId.Length)
-            metric_units = [
-                DB.UnitTypeId.Meters,
-                DB.UnitTypeId.Centimeters,
-                DB.UnitTypeId.Decimeters,
-                DB.UnitTypeId.Millimeters,
-                DB.UnitTypeId.MetersCentimeters	
-            ]
-            if display_units in set(metric_units):
-                return True
-            else:
-                return False
-
-def correct_input_units(val):
-    import re
-    try:
-        digits = float(val)
-    except ValueError:
-        # format the string using regex
-        digits = re.findall("[0-9.]+", val)[0]
-        if is_metric(revit.doc):
-            if version == "2020":
-                return DB.UnitUtils.ConvertToInternalUnits(float(digits), DB.DisplayUnitType.DUT_MILLIMETERS)
-            if version == "2022":
-                return DB.UnitUtils.ConvertToInternalUnits(float(digits), DB.UnitTypeId.Millimeters)
-        else:
-            if version == "2020":
-                return DB.UnitUtils.ConvertToInternalUnits(float(digits), DB.DisplayUnitType.DUT_DECIMAL_INCHES)
-            if version == "2022":
-                return DB.UnitUtils.ConvertToInternalUnits(float(digits), DB.UnitTypeId.Inches )
-
+from pyrevit import revit, DB, script, forms, HOST_APP, coreutils
 
 def get_aligned_crop(geo, transform):
 
