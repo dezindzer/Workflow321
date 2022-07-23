@@ -1,8 +1,19 @@
 layout:
+  - ByString
+  - CalculateRoomHeights
   - Floor and roof by room
+  - Copy_VG_Filters
   - Clear Mark
+  - duplicate_sheets
+  - GraphicsOverviews
+  - Mullion Test
+  - rooms
+  - RoomsToFloors
+  - RoomsToOutlines
+  - RoomsToRegions
   - Door Scheme
   - Corner Count
   - Kotiranje
+  - ShortenRibbonNames
   - -----
   - Reload
