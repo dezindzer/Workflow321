@@ -2,10 +2,9 @@
 # inspiration and big part of the code is done by pyChilizer
 
 ### TO DO ###
-### dodati filter za ISO
-### sortirati listu prema broju sobe
-### tagovanje vrata
-### tagovanje plafonskih panela
+### ISO filter
+### list sorting by room number
+### hide elements outside crop
 
 from pyrevit import revit, DB, script, forms, HOST_APP
 from pyrevit.revit.db import query
@@ -20,7 +19,6 @@ version = HOST_APP.version
 
 def Canceled():
     Alert('User canceled the operation', title="Canceled", header="", exit=True)
-
 
 def GetCenterPoint(ele):
     bBox = ele.get_BoundingBox(None)
@@ -65,12 +63,6 @@ tblock_dict = {'{}: {}'.format(tb.FamilyName, revit.query.get_name(tb)): tb for 
 roomtagz = DB.FilteredElementCollector(revit.doc).OfCategory(DB.BuiltInCategory.OST_RoomTags).WhereElementIsElementType().ToElements()
 roomtag_dict = {'{}: {}'.format(rt.FamilyName, revit.query.get_name(rt)): rt for rt in roomtagz}
 
-paneltagz = DB.FilteredElementCollector(revit.doc).OfCategory(DB.BuiltInCategory.OST_CurtainWallPanelTags).WhereElementIsElementType().ToElements()
-paneltag_dict = {'{}: {}'.format(pt.FamilyName, revit.query.get_name(pt)): pt for pt in paneltagz}
-
-elevationtagz = DB.FilteredElementCollector(revit.doc).OfCategory(DB.BuiltInCategory.OST_CurtainWallPanelTags).WhereElementIsElementType().ToElements()
-elevationtag_dict = {'{}: {}'.format(et.FamilyName, revit.query.get_name(et)): et for et in elevationtagz}
-
 floor_plan_type = [vt for vt in svaGledista.WhereElementIsElementType() if vt.FamilyName == "Floor Plan"][1]
 ceiling_plan_type = [vt for vt in svaGledista.WhereElementIsElementType() if vt.FamilyName == "Ceiling Plan"][0]
 elevation_type = [vt for vt in svaGledista.WhereElementIsElementType() if vt.FamilyName == "Elevation"][1] 
@@ -101,21 +93,11 @@ components = [
     ComboBox(name="vt_ceiling_plans", options=sorted(plafon_dict)), #default="Plafoni 1.50"),  
     Label("View Template for Elevations"),
     ComboBox(name="vt_elevs", options=sorted(viewsection_dict)),# default="Pogledi 1.50"),
-    Label ("Select Room Tag"),
-    ComboBox(name="rt", options=sorted(roomtag_dict)), #default="CRE Room Tag 50: 3. Number, Area"),
-    Label ("Select FloorPlan Panel Tag"),
-    ComboBox(name="pt", options=sorted(paneltag_dict)), #default="1.Paneli 1.50: Mark + Dimensions"),
-    Label ("Select Elevation Panel Tag"),
-    ComboBox(name="et", options=sorted(elevationtag_dict)), #default="1.Paneli 1.50: Mark + Dimensions"),
-    
     Separator(),
     Label ("Tag Rooms"),
     CheckBox(name="tag_rooms", checkbox_text="", default=False),
-    Label ("Tag Walls"),
-    CheckBox(name="tag_walls", checkbox_text="This option takes time", default=False),
-    Label ("Tag Elevations"),
-    CheckBox(name="tag_elevations", checkbox_text="This option takes time", default=False),
-    Separator(),
+    Label ("Select Room Tag"),
+    ComboBox(name="rt", options=sorted(roomtag_dict)), #default="CRE Room Tag 50: 3. Number, Area"),
     Label(""),
     Button("Ok")
 ]
@@ -130,14 +112,9 @@ if viewSettings == True:
     chosen_vt_floor_plan = osnova_dict[form.values["vt_floor_plans"]]
     chosen_vt_ceiling_plan = plafon_dict[form.values["vt_ceiling_plans"]]
     chosen_vt_elevation = viewsection_dict[form.values["vt_elevs"]]
-    #Tagovi
+    #Room Tag
     chosen_roomTag = roomtag_dict[form.values["rt"]]
-    chosen_panelTag = paneltag_dict[form.values["pt"]]
-    chosen_elevationTag = paneltag_dict[form.values["et"]]
-    ### YesNO
     chosen_tag_rooms = form.values["tag_rooms"]
-    chosen_tag_wall = form.values["tag_walls"]
-    chosen_tag_elevation = form.values["tag_elevations"]
 
     # approximate positions for viewports on an A2 sheet
     Xx = 0.8
@@ -188,12 +165,12 @@ if viewSettings == True:
                     plafon = DB.ViewPlan.Create(revit.doc, ceiling_plan_type.Id, level.Id)
                     plafon.Scale = view_scale
                     plafon.CropBoxActive = True
+
                     # Create Elevations
                     elevations_col = []
                     new_marker = DB.ElevationMarker.CreateElevationMarker(revit.doc, elevation_type.Id, room_location, view_scale)
                     elevation_count = ["D", "A", "B", "C"]
                     revit.doc.Regenerate()
-                    
                     for i in range(4):
                         try:
                             elevation = new_marker.CreateElevation(revit.doc, firstView.Id, i)
@@ -206,36 +183,6 @@ if viewSettings == True:
                             elevation.Name = elevation_name
                             elevations_col.append(elevation)
                             helper.set_anno_crop(elevation)
-                            erd = elevation.RightDirection
-                            #print(elevation.Name)
-                            #print(erd)
-                            # ELEVATION TAG
-                            if chosen_tag_elevation == True:
-                                wallInElevation = DB.FilteredElementCollector(revit.doc, elevation.Id).WhereElementIsNotElementType().OfCategory(DB.BuiltInCategory.OST_CurtainWallPanels).ToElements()
-                                erd = elevation.RightDirection 
-                                #print(erd)
-                                #print(wallInElevation)
-                                for e in wallInElevation:
-                                    d = e.FacingOrientation
-                                    wallFrontFacing = d.Y
-                                    erdX = erd.X
-                                    
-                                    wallSideFacing = d.X
-                                    erdY = erd.Y
-                                    
-                                    testerdx = erdX == wallFrontFacing
-                                    testerdy = erdY == wallSideFacing
-                                    
-                                    if testerdx != 0:
-                                        familyInstanceRef = DB.Reference(e)
-                                        wallPanelLocation = GetCenterPoint(e) 
-                                        createElevationTag = DB.IndependentTag.Create(revit.doc, elevation.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, DB.TagOrientation.Horizontal, wallPanelLocation)
-                                        createElevationTag.ChangeTypeId(chosen_elevationTag.Id)
-                                    if testerdy != 0:
-                                        familyInstanceRef = DB.Reference(e)
-                                        wallPanelLocation = GetCenterPoint(e) 
-                                        createElevationTag = DB.IndependentTag.Create(revit.doc, elevation.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, DB.TagOrientation.Horizontal, wallPanelLocation)
-                                        createElevationTag.ChangeTypeId(chosen_elevationTag.Id)
                         except:
                             #print("Greška u pravljenju elevationa. Proveriti da li postoje neophodne tipovi za elevation ( 1. Pogledi ) ili crtež osnove, ili da li su sve sobe zatvorene.")
                             print(eRoom.Number)
@@ -293,36 +240,17 @@ if viewSettings == True:
                         place_elevation.get_Parameter(DB.BuiltInParameter.VIEWPORT_DETAIL_NUMBER).Set(i)
                         revit.doc.Regenerate()
                         
-                with revit.Transaction("TAG", revit.doc):
-        # WALL TAG 
-                    wallInOsnova = DB.FilteredElementCollector(revit.doc, osnova.Id).WhereElementIsNotElementType().OfCategory(DB.BuiltInCategory.OST_CurtainWallPanels).ToElements()
-                    if chosen_tag_wall == True:
-                        for e in wallInOsnova: 
-                                g = e.FacingOrientation
-                                wallX =g.Y
-                                wallY =g.X
-                                if wallX != 0:
-                                    tagOrientation = DB.TagOrientation.Horizontal
-                                if wallY != 0:
-                                    tagOrientation = DB.TagOrientation.Vertical
-                                else:
-                                    tagOrientation = DB.TagOrientation.Horizontal
-                                
-                                familyInstanceRef = DB.Reference(e)
-                                wallPanelLocation = GetCenterPoint(e)    
-                                createWallTag = DB.IndependentTag.Create(revit.doc, osnova.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientation, wallPanelLocation)
-                                createWallTag.ChangeTypeId(chosen_panelTag.Id)	   
-                        else:
-                            pass  
+                with revit.Transaction("Room TAG", revit.doc):
         # ROOM TAG               
                     if chosen_tag_rooms == True:
-                        for e in wallInOsnova:  
+                        try:
                             createRoomTag = revit.doc.Create.NewRoomTag(roomId, roomTagLocation, osnova.Id) 
                             createRoomTag.ChangeTypeId(chosen_roomTag.Id)	   
-                        else:
+                        except:
+                            ui.forms.Alert("Rooms not tagged.", header = "Error")
                             pass
+                        
                     revit.doc.Regenerate()
             pb.update_progress(counter, max_value)
-
 else:
     Canceled()
