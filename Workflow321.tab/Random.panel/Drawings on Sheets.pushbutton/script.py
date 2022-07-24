@@ -13,7 +13,7 @@ from pyrevit.framework import List
 from itertools import izip
 from rpw import ui
 from rpw.ui.forms import FlexForm, Label, TextBox, Button, ComboBox, Separator, CheckBox, CommandLink, TaskDialog, Alert
-from Autodesk.Revit import Exceptions
+#from Autodesk.Revit import Exceptions
 import helper, math, units, sys
 
 version = HOST_APP.version
@@ -30,7 +30,6 @@ output = script.get_output()
 logger = script.get_logger()
 
 # collector - choose by hand or all rooms
-
 selectionMethod = [
     CommandLink('All rooms', return_value=1),
     CommandLink('Choose rooms by hand', return_value=2)

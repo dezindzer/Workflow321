@@ -11,9 +11,10 @@ layout:
   - RoomsToFloors
   - RoomsToOutlines
   - RoomsToRegions
-  - Door Scheme
-  - Corner Count
+  - DoorScheme
+  - CornerCount
   - Kotiranje
   - ShortenRibbonNames
+  - TestCoskovi
   - -----
   - Reload

@@ -1,0 +1,8 @@
+title: Door Scheme
+tooltip: Runs a Dynamo script for Door Scheme
+author: Nikola Marković
+highlight: new
+references:
+engine:
+  clean: true
+  automate: false

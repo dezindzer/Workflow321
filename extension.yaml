@@ -1,15 +1,8 @@
-# UI Extensions
+builtin: false
 type: extension
-rocket_mode_compatible: true
-
-# Library Extensions
+rocket_mode_compatible: false
 type: extension
 
-# Run Extensions
-type: extension
-
-# all extensions types can define a list of dependencies
-# this is a list of other extensions, that this extension is dependent on
 # dependencies:
 #   - ExtensionName
 #   - ExtensionName

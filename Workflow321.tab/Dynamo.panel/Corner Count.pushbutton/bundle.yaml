@@ -1,0 +1,8 @@
+title: Corner Counter 3000
+tooltip: Runs a Dynamo script for Corner Count
+author: Nikola Marković
+highlight: new
+references:
+engine:
+  clean: true
+  automate: false
