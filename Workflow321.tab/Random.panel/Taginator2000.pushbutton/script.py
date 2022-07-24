@@ -1,4 +1,9 @@
 # This Python file uses the following encoding: utf-8
+
+### TO DO ###
+### tagging doors
+### tagging of ceilin/roof panels
+
 from pyrevit import revit, DB, script, forms, HOST_APP, forms
 from pyrevit.forms import WPFWindow
 from pyrevit.revit.db import query
@@ -176,9 +181,6 @@ with forms.ProgressBar(title='Tagging Sheets ... ({value} of {max_value})') as p
                         #     print(getView.LookupParameter("View Name").AsString())     
                         #     print("Legend")
                         
-                        
-                                                            
-######################## TO DO
                         # ROOM TAG               
                             # if chosen_tag_rooms == True:
                             #     for e in wallInOsnova:  
