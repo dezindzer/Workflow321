@@ -1,17 +1,22 @@
 # This Python file uses the following encoding: utf-8
-
 #to do:
 #change 3D view type
 
 from itertools import count
 from pyrevit import revit, DB, script, forms, HOST_APP
-from pyrevit.revit.db import XYZPoint, query
+from pyrevit.revit.db import query
 from pyrevit.framework import List
-from Autodesk.Revit import Exceptions
 from rpw import ui
+from Autodesk.Revit.DB import Element   #ne brisati
+
 output = script.get_output()
 
 curview = revit.active_view
+
+def apply_vt(v, vt):
+    if vt:
+        v.ViewTemplateId = vt.Id
+    return
 
 tits = "Flipped Doors"
 pogledi3D = DB.FilteredElementCollector(revit.doc).OfClass(DB.View3D)
@@ -20,22 +25,6 @@ viewTemplate = {v.Name: v for v in pogledi3D if v.IsTemplate}
 
 first3Delement = pogledi3D.ToElements()
 first3DView = first3Delement[0]
-
-def get_revitid(element):
-    return str(element.Id)[:30]
-
-def get_view(some_name):
-    view_name_filter = query.get_biparam_stringequals_filter({DB.BuiltInParameter.VIEW_NAME: some_name})
-    found_view = DB.FilteredElementCollector(revit.doc) \
-        .OfCategory(DB.BuiltInCategory.OST_Views) \
-        .WherePasses(view_name_filter) \
-        .WhereElementIsNotElementType().ToElements()
-    return found_view
-
-def apply_vt(v, vt):
-    if vt:
-        v.ViewTemplateId = vt.Id
-    return
 
 with revit.TransactionGroup(tits, revit.doc):
     #create a view template if it does not exist already
@@ -51,10 +40,11 @@ with revit.TransactionGroup(tits, revit.doc):
                     pass
                 
     svaGledista = (DB.FilteredElementCollector(revit.doc).OfClass(DB.ViewFamilyType))
-    familyType  = [vt for vt in svaGledista.WhereElementIsElementType() if vt.FamilyName == "3D View"][0]
+    familyType  = [vt for vt in svaGledista.WhereElementIsElementType() if vt.FamilyName == "3D View" and Element.Name.__get__(vt) == "Flipped Doors"][0]
+    # have to use the imported Element otherwise - AttributeError - occurs
 
 doors = DB.FilteredElementCollector(revit.doc).OfCategory(DB.BuiltInCategory.OST_Doors).WhereElementIsNotElementType()
-    
+
 counter = 0
 flippedId = List[DB.ElementId]()
 
@@ -88,10 +78,13 @@ with revit.Transaction(tits, revit.doc):
                     view.SetSectionBox(BoundingBoxXYZ)
                     viewName = name + " - " + mark + " ID " + str(revitID)
                     #loop za proveru da li ime vec postoji, ako da, napravi novi sa Copy 1 tagom
-                    while get_view(viewName):
+                    while query.get_view_by_name(viewName):
                         viewName = viewName + " Copy 1"
                     view.Name = viewName
-ui.forms.Alert("Found elements will be isolated.", title=tits, header = str(counter) + " flipped doors were found.")
+if counter>0:
+    ui.forms.Alert("Found elements will be isolated.\n \nViews are created with the \"Flipped Doors\" family type. \nYou can find them in the project browser!", title=tits, header = str(counter) + " flipped doors were found.")
+    with revit.Transaction("Isolate elements in view", revit.doc):
+        curview.IsolateElementsTemporary(flippedId)
+else:
+    ui.forms.Alert("GREAT JOB!\nKeep up the good work!", title=tits, header = str(counter) + " flipped doors were found.")
 
-with revit.Transaction("Isolate elements in view", revit.doc):
-    curview.IsolateElementsTemporary(flippedId)
