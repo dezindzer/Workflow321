@@ -1,0 +1,10 @@
+layout:
+  - Model Finder
+  - -----
+  - AllUsersAddinsLocation
+  - CurrentUserAddinsLocation
+  - -----
+  - CurrentUsersDataFolderPath
+  - CurrentUsersAddinsDataFolderPath
+  - -----
+  - FamilyTemplatePath

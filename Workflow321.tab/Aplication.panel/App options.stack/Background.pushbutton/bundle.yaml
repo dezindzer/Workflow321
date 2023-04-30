@@ -1,0 +1,8 @@
+title: Background Color Changer
+tooltip: Changes the background color of the Revit interface from a set of predefined colors
+author: Nikola Marković
+highlight: null
+references:
+engine:
+  clean: true
+  automate: false
