@@ -170,7 +170,7 @@ if viewSettings == True:
                     elevations_col = []
                     new_marker = DB.ElevationMarker.CreateElevationMarker(revit.doc, elevation_type.Id, room_location, view_scale)
                     elevation_count = ["D", "A", "B", "C"]
-                    revit.doc.Regenerate()
+                    #revit.doc.Regenerate()
                     for i in range(4):
                         try:
                             elevation = new_marker.CreateElevation(revit.doc, firstView.Id, i)
@@ -201,10 +201,10 @@ if viewSettings == True:
                             crop_shapeO.SetCropShape(offset_boundaries)
                             crop_shapeP = plafon.GetCropRegionShapeManager()
                             crop_shapeP.SetCropShape(offset_boundaries)
-                            revit.doc.Regenerate()
+                            #revit.doc.Regenerate()
                         # for some shapes the offset will fail, then use BBox method
                         except:
-                            revit.doc.Regenerate()
+                            #revit.doc.Regenerate()
                             # room bbox in this view
                             new_bbox = eRoom.get_BoundingBox(osnova)
                             osnova.CropBox = new_bbox
@@ -226,7 +226,7 @@ if viewSettings == True:
                     helper.set_anno_crop(plafon)
                     helper.apply_vt(osnova, chosen_vt_floor_plan)
                     helper.apply_vt(plafon, chosen_vt_ceiling_plan)
-                    revit.doc.Regenerate()
+                    #revit.doc.Regenerate()
 
                 with revit.Transaction("Add Views to Sheet", revit.doc):
                     # place view on sheet
@@ -238,7 +238,7 @@ if viewSettings == True:
                         place_elevation = DB.Viewport.Create(revit.doc, sheet.Id, el.Id, pos)
                         # set viewport detail number
                         place_elevation.get_Parameter(DB.BuiltInParameter.VIEWPORT_DETAIL_NUMBER).Set(i)
-                        revit.doc.Regenerate()
+                        #revit.doc.Regenerate()
                         
                 with revit.Transaction("Room TAG", revit.doc):
         # ROOM TAG               
@@ -250,7 +250,7 @@ if viewSettings == True:
                             ui.forms.Alert("Rooms not tagged.", header = "Error")
                             pass
                         
-                    revit.doc.Regenerate()
+                    #revit.doc.Regenerate()
             pb.update_progress(counter, max_value)
 else:
     Canceled()
