@@ -1,0 +1,13 @@
+layout:
+- Delete Problematic Rooms
+- Delete unused filters
+- Delete unused templates
+- Purge delete backups
+- Purge dwg patterns
+- Purge imported dwg
+- Purge unenclosed areas
+- Purge unplaced areas
+- Purge unplaced views
+- Purge unused scope boxes
+- Purge unused sheets
+- Ungroup All

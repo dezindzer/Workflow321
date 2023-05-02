@@ -16,7 +16,8 @@ Extension has several panels in the tab:
 
 * Model - information to be added
 * Random - information to be added
-* Dynamo information to be added
+* Dynamo - information to be added
+* Application - information to be added
 
 Every tool has an embedded description. To see the description and hint, hover mouse over the button
 
