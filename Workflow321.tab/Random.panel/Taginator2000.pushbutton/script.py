@@ -1,9 +1,9 @@
 # This Python file uses the following encoding: utf-8
 
-from pyrevit import revit, DB, forms, forms
-from pyrevit.revit.db import query
-from pyrevit.framework import List
-from itertools import izip
+## TO DO ##
+# Tag Doors in elevation views and offset the tag bellow the door
+
+from pyrevit import revit, DB, forms
 from rpw.ui.forms import FlexForm, Label, TextBox, Button, ComboBox, Separator, CheckBox
 import sys
 
@@ -17,6 +17,7 @@ doorTag_dict = {'{}: {}'.format(dt.FamilyName, revit.query.get_name(dt)): dt for
 elevationtagz = DB.FilteredElementCollector(revit.doc).OfCategory(DB.BuiltInCategory.OST_CurtainWallPanelTags).WhereElementIsElementType().ToElements()
 elevationtag_dict = {'{}: {}'.format(et.FamilyName, revit.query.get_name(et)): et for et in elevationtagz}
 
+# get all sheets
 all_sheets = DB.FilteredElementCollector(revit.doc).OfClass(DB.ViewSheet).WhereElementIsNotElementType().ToElements()
 sheets = DB.FilteredElementCollector(revit.doc).OfCategory(DB.BuiltInCategory.OST_Sheets).WhereElementIsNotElementType().ToElements()
 sheetCat03 = [vt for vt in sheets if '03' in vt.LookupParameter("KATEGORIJA CRTEZA").AsString()]
@@ -33,9 +34,8 @@ def GetCenterPoint(ele):
     bBox = ele.get_BoundingBox(None)
     return (bBox.Max + bBox.Min) / 2
 
+# define FlexForm components
 components = [
-    #Label ("Select Room Tag"), ComboBox(name="rt", options=sorted(roomtag_dict)), #default="CRE Room Tag 50: 3. Number, Area"),
-    #Label ("Tag Rooms"), CheckBox(name="tag_rooms", checkbox_text="", default=False),
     Label ("Tagging takes time, be patient!!!"),
     Separator(),
     CheckBox(name="tag_doors", checkbox_text="Tag Doors", default=True),
@@ -54,10 +54,11 @@ components = [
     Button("Ok")
 ]
 
+# create and show FlexForm
 form = FlexForm("Tag Options", components)
 form.show()
 
-#Tagovi
+# get chosen tags and options
 chosen_doorTag = doorTag_dict[form.values["dt"]]
 chosen_panelTag = paneltag_dict[form.values["pt"]]
 chosen_elevationTag = paneltag_dict[form.values["et"]]
@@ -77,10 +78,9 @@ if not sheets:
 	sys.exit()
 max_value = len(sheets)
 
-with forms.ProgressBar(title='Tagging Sheets ... ({value} of {max_value})') as pb:
+with forms.ProgressBar(title='Tagging Sheets ... ({value} of {max_value})', cancellable=True) as pb:
     counter = 0
     for sheet in sheets:
-        counter = counter + 1
         viewports = sheet.GetAllViewports()
         with revit.Transaction("TAG! "+ str(counter) + " / " + str(max_value), revit.doc):
             for viewport in viewports:
@@ -190,3 +190,4 @@ with forms.ProgressBar(title='Tagging Sheets ... ({value} of {max_value})') as p
                                 createElevationTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, DB.TagOrientation.Horizontal, wallPanelLocation)
                                 createElevationTag.ChangeTypeId(chosen_elevationTag.Id)
         pb.update_progress(counter, max_value)
+        counter += 1
