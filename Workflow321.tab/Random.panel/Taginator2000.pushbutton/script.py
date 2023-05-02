@@ -93,60 +93,40 @@ with forms.ProgressBar(title='Tagging Sheets ... ({value} of {max_value})', canc
                 testIfFloorplan = testV == testV.FloorPlan
                 testIfCeilingPlan = testV == testV.CeilingPlan
                 
-                # FloorPlan
+                # floor plan
                 if testIfFloorplan == True:
                     wallInOsnova = DB.FilteredElementCollector(revit.doc, getView.Id).WhereElementIsNotElementType().OfCategory(DB.BuiltInCategory.OST_CurtainWallPanels).ToElements()
-                    # Wall tag
+                    # wall tag in floorplan
                     if chosen_tag_wall == True:
                         for e in wallInOsnova: 
                             familyInstanceRef = DB.Reference(e)
                             wallPanelLocation = GetCenterPoint(e)  
                             g = e.FacingOrientation
-                            wallX =g.Y
-                            wallY =g.X
-                            tagOrientationH = DB.TagOrientation.Horizontal
-                            tagOrientationV = DB.TagOrientation.Vertical
-                            if wallX == float(1):
+                            wallX, wallY = g.Y, g.X
+                            tagOrientationH, tagOrientationV = DB.TagOrientation.Horizontal, DB.TagOrientation.Vertical
+                            
+                            if wallX == 1.0 or wallX == -1.0:
                                 createWallTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientationH, wallPanelLocation)
-                                createWallTag.ChangeTypeId(chosen_panelTag.Id)	
-                            if wallX == float(-1):
-                                createWallTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientationH, wallPanelLocation)
-                                createWallTag.ChangeTypeId(chosen_panelTag.Id)	
-                            elif wallY == float(1):
+                                createWallTag.ChangeTypeId(chosen_panelTag.Id)
+                            elif wallY == 1.0 or wallY == -1.0:
                                 createWallTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientationV, wallPanelLocation)
-                                createWallTag.ChangeTypeId(chosen_panelTag.Id)	
-                            elif wallY == float(-1):
-                                createWallTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientationV, wallPanelLocation)
-                                createWallTag.ChangeTypeId(chosen_panelTag.Id)	
+                                createWallTag.ChangeTypeId(chosen_panelTag.Id)
                     else:
                         pass
                     doorInOsnova = DB.FilteredElementCollector(revit.doc, getView.Id).WhereElementIsNotElementType().OfCategory(DB.BuiltInCategory.OST_Doors).ToElements()
-                    #Door tag
+                    # door tag in floorplan
                     if chosen_tag_door == True:
                         for e in doorInOsnova: 
                             familyInstanceRef = DB.Reference(e)
-                            doorPanelLocation = GetCenterPoint(e)  
+                            doorPanelLocation = GetCenterPoint(e)
                             g = e.FacingOrientation
-                            doorX =g.Y
-                            doorY =g.X
-                            tagOrientationH = DB.TagOrientation.Horizontal
-                            tagOrientationV = DB.TagOrientation.Vertical
-                            if doorX == float(1):
-                                createDoorTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientationH, doorPanelLocation)
-                                createDoorTag.ChangeTypeId(chosen_doorTag.Id)	
-                            if doorX == float(-1):
-                                createDoorTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientationH, doorPanelLocation)
-                                createDoorTag.ChangeTypeId(chosen_doorTag.Id)	
-                            elif doorY == float(1):
-                                createDoorTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientationV, doorPanelLocation)
-                                createDoorTag.ChangeTypeId(chosen_doorTag.Id)	
-                            elif doorY == float(-1):
-                                createDoorTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientationV, doorPanelLocation)
-                                createDoorTag.ChangeTypeId(chosen_doorTag.Id)	
+                            doorY =g.Y
+                            tagOrientation = DB.TagOrientation.Horizontal if doorY == 1.0 or doorY == -1.0 else DB.TagOrientation.Vertical
+                            createDoorTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientation, doorPanelLocation)
+                            createDoorTag.ChangeTypeId(chosen_doorTag.Id)
                     else:
                         pass
-                    
-                # CeilingPlan TAG 
+                # ceiling plan tag 
                 if testIfCeilingPlan == True:
                     wallInRoof = DB.FilteredElementCollector(revit.doc, getView.Id).WhereElementIsNotElementType().OfCategory(DB.BuiltInCategory.OST_CurtainWallPanels).ToElements()
                     if chosen_tag_ceiling == True:
@@ -163,8 +143,9 @@ with forms.ProgressBar(title='Tagging Sheets ... ({value} of {max_value})', canc
                                     createWallTag.ChangeTypeId(chosen_panelTag.Id)	   
                         else:
                             pass
-                # ELEVATION TAG
+                # elevation plan
                 if testIfElevation == True:
+                    # wall tags in elevation views
                     if chosen_tag_elevation == True:
                         wallInElevation = DB.FilteredElementCollector(revit.doc, getView.Id).WhereElementIsNotElementType().OfCategory(DB.BuiltInCategory.OST_CurtainWallPanels).ToElements()
                         erd = getView.RightDirection 
@@ -189,5 +170,18 @@ with forms.ProgressBar(title='Tagging Sheets ... ({value} of {max_value})', canc
                                 wallPanelLocation = GetCenterPoint(e) 
                                 createElevationTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, DB.TagOrientation.Horizontal, wallPanelLocation)
                                 createElevationTag.ChangeTypeId(chosen_elevationTag.Id)
+                    else:
+                        pass
+                    
+                    # door tags in elevation views
+                    if chosen_tag_door == True:
+                        for e in doorInOsnova: 
+                            familyInstanceRef = DB.Reference(e)
+                            doorPanelLocation = GetCenterPoint(e)
+                            createDoorTag = DB.IndependentTag.Create(revit.doc, getView.Id, familyInstanceRef, False, DB.TagMode.TM_ADDBY_CATEGORY, DB.TagOrientation.Horizontal, doorPanelLocation)
+                            createDoorTag.ChangeTypeId(chosen_doorTag.Id)	
+                    else:
+                        pass
+                    
         pb.update_progress(counter, max_value)
         counter += 1
