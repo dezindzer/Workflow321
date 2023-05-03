@@ -1,16 +1,9 @@
 # import libraries
-import clr
 import os
-from os import listdir
-import System
-from System.IO import SearchOption
 from System import Environment
 # import pyrevit libraries
-from pyrevit import forms
-from pyrevit import revit,DB
-
-# get document
-doc = revit.doc
+from pyrevit import forms, DB
+from pyrevit.revit import doc
 
 # try to open cache path
 try:

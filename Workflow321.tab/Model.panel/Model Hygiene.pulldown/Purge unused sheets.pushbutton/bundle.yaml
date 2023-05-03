@@ -1,3 +1,4 @@
+context: doc-project
 title: Purge unused sheets
 tooltip: Delete all the Sheets without Viewports on them.
 author: Deyan Nenov

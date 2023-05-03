@@ -1,0 +1,4 @@
+context: doc-project
+title: Allow Joints for Curtain Walls
+tooltip: For all Curtain Walls in the project at the beginning and end of each wall ENABLES the join property of the wall (Allow Join)
+author: Nikola Marković

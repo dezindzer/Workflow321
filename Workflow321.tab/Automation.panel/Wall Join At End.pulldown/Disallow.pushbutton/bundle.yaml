@@ -1,0 +1,4 @@
+context: doc-project
+title: Disallow Joints for Curtain Walls
+tooltip: For all Curtain Walls in the project at the beginning and end of each wall DISABLES the join property of the wall (Dissalow Join)
+author: Nikola Marković
