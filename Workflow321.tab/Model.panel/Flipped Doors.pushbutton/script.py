@@ -2,12 +2,12 @@
 #to do:
 #change 3D view type
 
-from itertools import count
-from pyrevit import revit, DB, script, forms, HOST_APP
+from pyrevit import revit, DB
 from pyrevit.revit.db import query
 from pyrevit.framework import List
-from rpw import ui
 from Autodesk.Revit.DB import Element   #ne brisati
+from rpw.ui.forms import Alert
+from pyrevit.revit import doc, Transaction
 
 curview = revit.active_view
 
@@ -17,19 +17,19 @@ def apply_vt(v, vt):
     return
 
 tits = "Flipped Doors"
-pogledi3D = DB.FilteredElementCollector(revit.doc).OfClass(DB.View3D)
+pogledi3D = DB.FilteredElementCollector(doc).OfClass(DB.View3D)
 
 viewTemplate = {v.Name: v for v in pogledi3D if v.IsTemplate}
 
 first3Delement = pogledi3D.ToElements()
 first3DView = first3Delement[0]
 
-doors = DB.FilteredElementCollector(revit.doc).OfCategory(DB.BuiltInCategory.OST_Doors).WhereElementIsNotElementType()
+doors = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Doors).WhereElementIsNotElementType()
 flippedId = List[DB.ElementId]()
-familyType = next(vt for vt in DB.FilteredElementCollector(revit.doc).OfClass(DB.ViewFamilyType).WhereElementIsElementType() if vt.FamilyName == "3D View" and Element.Name.__get__(vt) == "Flipped Doors")
+familyType = next(vt for vt in DB.FilteredElementCollector(doc).OfClass(DB.ViewFamilyType).WhereElementIsElementType() if vt.FamilyName == "3D View" and Element.Name.__get__(vt) == "Flipped Doors")
     # have to use the imported Element otherwise - AttributeError - occurs
 
-with revit.Transaction(tits, revit.doc):
+with Transaction(tits, doc):
     #create a view template if it does not exist already
                 if viewTemplate:
                     viewTemplateFlip = viewTemplate[tits]
@@ -58,7 +58,7 @@ with revit.Transaction(tits, revit.doc):
                             for view in enumerate(flips):
                                 flippedId.Add(revitID)
                                 wallHost= door.Host
-                                view = DB.View3D.CreateIsometric(revit.doc, familyType.Id)
+                                view = DB.View3D.CreateIsometric(doc, familyType.Id)
                                 apply_vt(view, viewTemplateFlip)
                                 BoundingBoxXYZ = wallHost.get_BoundingBox(view)                
                                 view.SetSectionBox(BoundingBoxXYZ)
@@ -69,8 +69,8 @@ with revit.Transaction(tits, revit.doc):
                                 view.Name = viewName
 counter=len(flippedId)
 if counter>0:
-    ui.forms.Alert("Found elements will be isolated.\n \nViews are created with the \"3D Views (Flipped Doors)\" type. \nYou can find them in the project browser!", title=tits, header = str(counter) + " flipped doors were found.")
-    with revit.Transaction("Isolate flipped doors in current view", revit.doc):
+    Alert("Found elements will be isolated.\n \nViews are created with the \"3D Views (Flipped Doors)\" type. \nYou can find them in the project browser!", title=tits, header = str(counter) + " flipped doors were found.")
+    with Transaction("Isolate flipped doors in current view", doc):
         curview.IsolateElementsTemporary(flippedId)
 else:
-    ui.forms.Alert("GREAT JOB!\nKeep up the good work!", title=tits, header = str(counter) + " flipped doors were found.")
+    Alert("GREAT JOB!\nKeep up the good work!", title=tits, header = str(counter) + " flipped doors were found.")
