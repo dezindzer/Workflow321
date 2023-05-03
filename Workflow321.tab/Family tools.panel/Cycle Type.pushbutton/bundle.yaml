@@ -1,3 +1,12 @@
-title: Cycle Type
-tooltip: Cycle through available types in family manager
-author: Gui Talarico (PyRevitPlus)
+title:
+  ru: Круг типов
+  fr_fr: Parcourir les types
+  en_us: Cycle Types
+tooltip:
+  ru: Последовательно переключает типы семейств.
+  fr_fr: Parcourir les types de familles
+  en_us: Cycle family types
+context: doc-family
+authors:
+  - '{{author}}'
+  - Gui Talarico

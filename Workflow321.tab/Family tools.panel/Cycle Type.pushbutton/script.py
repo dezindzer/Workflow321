@@ -1,24 +1,18 @@
-from Autodesk.Revit.UI import TaskDialog
-from pyrevit.revit import doc, Transaction
+"""Cycle family types."""
+#pylint: disable=E0401
+from pyrevit import revit, DB
+from pyrevit import forms
 
-if not doc.IsFamilyDocument:
-    TaskDialog.Show('pyRevitPlus', 'Must be in Family Document.')
+family_mgr = revit.doc.FamilyManager
+family_types = sorted([x.Name for x in family_mgr.Types])
+if family_mgr.CurrentType:
+    current_idx = family_types.index(family_mgr.CurrentType.Name)
+    current_idx += 1
+    if current_idx >= len(family_types):
+        current_idx = 0
 
-else:
-    family_types = [x for x in doc.FamilyManager.Types]
-    sorted_type_names = sorted([x.Name for x in family_types])
-    current_type = doc.FamilyManager.CurrentType
-
-    # Iterate through sorted list of type names, return name of next in list
-    for n, type_name in enumerate(sorted_type_names):
-        if type_name == current_type.Name:
-            try:
-                next_family_type_name = sorted_type_names[n + 1]
-            except IndexError:
-                # wraps list back to 0 if current is last
-                next_family_type_name = sorted_type_names[0]
-
-    for family_type in family_types:
-        if family_type.Name == next_family_type_name:
-            with Transaction("Cycle Type", doc):
-                doc.FamilyManager.CurrentType = family_type
+    with revit.Transaction('Cycle Famiy Type'):
+        for ftype in family_mgr.Types:
+            if ftype.Name == family_types[current_idx]:
+                family_mgr.CurrentType = ftype
+                revit.ui.set_statusbar_text(ftype.Name)
