@@ -6,15 +6,15 @@ To use the extension follow the steps:
   * Install [pyRevit](https://github.com/eirannejad/pyRevit/releases) or make sure it´s already installed
   * Add Workflow321 extension:
     * Open comand promt (Win + R) => `cmd` OR search for CMD in Windows
-    * type following comand : `pyrevit extend ui Workflow321 "https://github.com/dezindzer/Workflow321.extension.git" --branch=main`
-  * A panel **Workflow321** should appear when you restart Revit or reload pyRevit (go to pyRevit tab -> Settings -> Reload)
+    * type following comand : `pyrevit extend ui Workflow321 "https://github.com/dezindzer/Workflow321.git" --branch=main`
+  * A wild ~~pokemon~~ panel **Workflow321** should appear when you restart Revit or reload pyRevit (go to pyRevit tab -> Settings -> Reload)
 
 ### Features 
 
 The extension itself looks the following way: ![ribbon](/logo/Extension%20panel.png)
 Extension has several panels in the tab:
 
-* Model - tools that do different stuff in the model space, mainly to quickly do something
+* Model - tools that do different things in the model space, mainly to quickly do something
 * Automation - Scripts that automate boring tasks
 * Dynamo - same as Automation, but haven't  got the time or energy to create pyRevit versions 
 * Application - not sure, it was fun
@@ -27,5 +27,5 @@ Every tool has an embedded description. To see the description and hint, hover m
 
 ### Remark ❗
 
-* Part of the descriptions and variables are written in Serbian. Use Google Translate or message me if you get stuck.
-* Some values are hardcoded for personal use. Feel free to edit the code as you please.
+> Part of the descriptions and variables are written in Serbian. Use Google Translate or message me if you get stuck.
+> Some values are hardcoded for personal use. Feel free to edit the code as you please.
