@@ -4,9 +4,13 @@
 
 To use the extension follow the steps:
   * Install [pyRevit](https://github.com/eirannejad/pyRevit/releases) or make sure it´s already installed
-  * Add Workflow321 extension:
-    * Open comand promt (Win + R) => `cmd` OR search for CMD in Windows
-    * type following comand : `pyrevit extend ui Workflow321 "https://github.com/dezindzer/Workflow321.git" --branch=main`
+  * To add the Workflow321 extension you can:
+    1.  Open comand promt (Win + R) => `cmd` OR search for CMD in Windows
+        - type following comand : 
+        - `pyrevit extend ui Workflow321 "https://github.com/dezindzer/Workflow321.git" --branch=main`
+
+    2.  Download and run the [Workflow321 one click deployment](https://github.com/dezindzer/Workflow321/blob/main/Workflow321%20one%20click%20deployment.bat) tool.
+
   * A wild ~~pokemon~~ panel **Workflow321** should appear when you restart Revit or reload pyRevit (go to pyRevit tab -> Settings -> Reload)
 
 ### Features 
@@ -27,5 +31,8 @@ Every tool has an embedded description. To see the description and hint, hover m
 
 ### Remark ❗
 
-> Part of the descriptions and variables are written in Serbian. Use Google Translate or message me if you get stuck.
-> Some values are hardcoded for personal use. Feel free to edit the code as you please.
+> * Part of the descriptions and variables are written in Serbian. Use Google Translate or message me if you get stuck.
+> * Some values are hardcoded for personal use. Feel free to edit the code as you please.
+
+### To do 💡
+* model validation
