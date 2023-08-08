@@ -1,6 +1,7 @@
 context: doc-project
 
 layout:
+  - ByString
   - SelCat
   - SelType
   - SelTtbs
@@ -13,4 +14,4 @@ layout:
 
 title: Quick select
 
-author: Gavin Crump
+authors: Gavin Crump, Marc Anton Dahmen

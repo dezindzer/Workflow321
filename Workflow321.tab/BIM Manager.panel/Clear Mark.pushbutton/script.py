@@ -18,7 +18,7 @@ guidSelekcijaHistory = Guid("9f8ffe79-6e87-4e6f-8a73-366812086618")
 guids = [guidSelekcijaOld, guidSelekcijaNew, guidSelekcijaHistory]
 
 #Code
-if host == "bob" or host == "dezindzer":
+if host == "nikolamarkovic.termovent" or host == "dezindzer" or host == "bob":
     with Transaction("Clear Selkcija, Mark and Mark History", doc):
         for l in lista:
             for w in l:
