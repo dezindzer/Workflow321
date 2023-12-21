@@ -1,32 +1,17 @@
 # This Python file uses the following encoding: utf-8
-
-from pyrevit import revit, DB
-from rpw.ui.forms import Alert
+from pyrevit import revit, DB, forms
 
 kolektor = DB.FilteredElementCollector(revit.doc).WhereElementIsNotElementType().WhereElementIsViewIndependent().OfCategory(DB.BuiltInCategory.OST_Walls).ToElements()
 curtainWalls = []
 n = 0
+curtainWalls = [e for e in kolektor if revit.doc.GetElement(e.GetTypeId()).Kind == DB.WallKind.Curtain]
+title = "Disallow Joints for Curtain Walls"
 
-for e in kolektor:
-	try:
-		elementType = revit.doc.GetElement(e.GetTypeId())
-		if elementType.Kind == DB.WallKind.Curtain:
-			curtainWalls.append(e)
-			n = n + 1
-	except:
-		print("not curtain wall")	
-
-text = "Broj obrađenih zidova je : " + str(n) 
-tits = "Allow Joints for Curtain Walls"
-
-Alert(text, title=tits, header="Trolovi su uspešno obavili posao!")
-
-with revit.Transaction(tits, revit.doc):
-	for e in curtainWalls:
-		try:
-			DB.WallUtils.AllowWallJoinAtEnd(e, 0)
-			DB.WallUtils.AllowWallJoinAtEnd(e, 1)
-		except:
-			print("Fail")
+with revit.Transaction(title, revit.doc):
+    for e in curtainWalls:
+        n = n + 1
+        if revit.doc.GetElement(e.Id):
+            for i in range(2):
+                DB.WallUtils.AllowWallJoinAtEnd(e, i)
 	# End Transaction
- 
+forms.alert(title=title, msg="All "+ str(n)+" wall ends joined", sub_msg="The minions have successfully done their job!", warn_icon=False)

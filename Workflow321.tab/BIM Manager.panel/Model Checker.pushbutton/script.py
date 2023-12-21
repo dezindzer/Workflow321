@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-import  os
-from pyrevit import revit, DB, script, forms
+from pyrevit import revit, script
 from pyrevit.revit import doc
-from pyrevit.revit.db import query
 from Autodesk.Revit.DB import *
 
 ft=304.8
