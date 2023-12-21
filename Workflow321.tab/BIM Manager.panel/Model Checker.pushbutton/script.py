@@ -26,7 +26,7 @@ for element in collector: # Iterate through the elements and check if they have 
         matching_elementsC.append(element)
         
 counter=0
-with revit.Transaction("test", doc):
+with revit.Transaction("Model checker", doc):
     for element in matching_elementsA: 
         A = element.GetParameters("Width")[0].AsValueString() #Width
         B = element.GetParameters("Height")[0].AsValueString() #Height
@@ -144,5 +144,3 @@ with revit.Transaction("test", doc):
                 CY.Set(TestCYTop)
                 counter=counter+1
                 print('CX Top ├ id: {}'.format(output.linkify(element.Id)))
-
-print(counter)
