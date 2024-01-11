@@ -1,7 +1,7 @@
 # import libraries
 import clr
 # import pyrevit libraries
-from pyrevit import forms,revit,DB,UI,script
+from pyrevit import forms,revit,DB,script
 
 # get document
 doc = revit.doc

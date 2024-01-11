@@ -1,6 +1,8 @@
 {
     "python.analysis.stubPath": "",
     "python.analysis.extraPaths": [
-        "C:\\Program Files\\pyRevit-Master\\pyrevitlib"
+        "C:\\Program Files\\pyRevit-Master\\pyrevitlib",
+        "E:\\GitHub\\STUBS\\RevitAPI stubs\\python-type-stubs-main\\stubs",
+        "./STUBS/stubs.min"
     ]
 }
