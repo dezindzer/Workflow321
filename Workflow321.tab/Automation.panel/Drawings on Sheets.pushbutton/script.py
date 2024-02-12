@@ -246,7 +246,7 @@ if viewSettings == True:
                             createRoomTag = revit.doc.Create.NewRoomTag(roomId, roomTagLocation, osnova.Id) 
                             createRoomTag.ChangeTypeId(chosen_roomTag.Id)	   
                         except:
-                            ui.forms.Alert("Rooms not tagged.", header = "Error")
+                            forms.alert("Rooms not tagged.", title="Error")
                             pass
                         
                     #revit.doc.Regenerate()
