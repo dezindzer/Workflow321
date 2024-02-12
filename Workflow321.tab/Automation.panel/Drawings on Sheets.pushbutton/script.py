@@ -7,18 +7,18 @@
 ### hide elements outside crop
 
 from pyrevit import revit, DB, script, forms, HOST_APP
-from pyrevit.revit.db import query
+#from pyrevit.revit.db import query
 from pyrevit.framework import List
 from itertools import izip
 from rpw import ui
-from rpw.ui.forms import FlexForm, Label, TextBox, Button, ComboBox, Separator, CheckBox, CommandLink, TaskDialog, Alert
+from rpw.ui.forms import FlexForm, Label, TextBox, Button, ComboBox, Separator, CheckBox
 #from Autodesk.Revit import Exceptions
 import helper, math, units, sys
 
 version = HOST_APP.version
 
 def Canceled():
-    Alert('User canceled the operation', title="Canceled", header="", exit=True)
+    forms.alert('User canceled the operation', title="Canceled", exitscript=True)
 
 def GetCenterPoint(ele):
     bBox = ele.get_BoundingBox(None)
@@ -27,16 +27,15 @@ def GetCenterPoint(ele):
 output = script.get_output()
 logger = script.get_logger()
 
-# collector - choose by hand or all rooms
-selectionMethod = [
-    CommandLink('All rooms', return_value=1),
-    CommandLink('Choose rooms by hand', return_value=2)
-    ]
-chosen_selection_method = TaskDialog('Choose the method for choosing rooms', commands=selectionMethod, show_close=True).show()
 
-if chosen_selection_method == 1:
+# collector - choose by hand or all rooms
+ops = ['All rooms', 'Choose rooms by hand']
+cfgs = {'All rooms': { 'background': '0xFF55FF'}}
+chosen_selection_method = forms.CommandSwitchWindow.show(ops, message='Select Option',  config=cfgs, recognize_access_key=False )
+
+if chosen_selection_method == ops[0]:
     rooms = DB.FilteredElementCollector(revit.doc).OfCategory(DB.BuiltInCategory.OST_Rooms).WhereElementIsNotElementType().ToElements()
-elif chosen_selection_method == 2:
+elif chosen_selection_method == ops[1]:
     # use preselected elements, filtering rooms only
     rooms = helper.select_rooms_filter()
     if not rooms:
