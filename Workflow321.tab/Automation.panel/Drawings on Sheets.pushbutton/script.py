@@ -3,8 +3,10 @@
 
 ### TO DO ###
 ### create Plan types with script, dont relly on already created plan types.
-### list sorting by room number
+### list sorting by room number. currently its sorting by element ID
 ### hide elements outside crop
+### add language options for some hardcoded stuff
+### izbor kategorije crteza katcrteza
 
 from pyrevit import revit, DB, script, forms
 #from pyrevit.framework import List
@@ -113,10 +115,11 @@ if viewSettings == True:
     #Elevation type
     chosen_elevation_type = elevation_types_dict[form.values["et"]]
     chosen_play_mode = form.values["Breskvica"]
-
+    
+    # open the link from the begining of the script
     if chosen_play_mode == True:
         script.open_url(url)
-
+    
     # approximate positions for viewports on an A2 sheet
     Xx = 0.8
     Yy = 0.4
@@ -130,7 +133,10 @@ if viewSettings == True:
     ]
     if not rooms:
         sys.exit()
+        
     rmcnt = [rmc for rmc in rooms if rmc.Area > 0]
+    rmcnt2 = [rmc.Id for rmc in rooms if rmc.Area > 0]
+    print(rmcnt2)
     #print(rmcnt)
     max_value = len(rmcnt)
     counter = 0
@@ -147,113 +153,92 @@ if viewSettings == True:
             roomTagLocation = DB.UV(room_location.X, room_location.Y*1.035)
             roomId = DB.LinkElementId(eRoom.Id)
             
-            with revit.TransactionGroup("Drawing on Sheet " + eRoom.Number, revit.doc):
-            
-                with revit.Transaction("Create Sheet " + eRoom.Number, revit.doc):
-                    sheet = helper.create_sheet("04 - " + str(sheet_number_start), eRoom.Number + imeSobe, chosen_tb.Id)
-                    katcrteza = sheet.LookupParameter("KATEGORIJA CRTEZA")
-                    katcrteza.Set('04 Pogledi')
-                                    
-                with revit.Transaction("Create Room" + eRoom.Number, revit.doc):
-                    # Create Floor Plan
-                    osnova = DB.ViewPlan.Create(revit.doc, floor_plan_type.Id, level.Id)
-                    #print(osnova.Name)
-                    osnova.Scale = view_scale
-                    osnova.CropBoxActive = True
-                    
-                    # Create Ceiling Plan
-                    plafon = DB.ViewPlan.Create(revit.doc, ceiling_plan_type.Id, level.Id)
-                    plafon.Scale = view_scale
-                    plafon.CropBoxActive = True
-
-                    # Create Elevations
-                    elevations_col = []
-                    new_marker = DB.ElevationMarker.CreateElevationMarker(revit.doc, chosen_elevation_type.Id, room_location, view_scale)
-                    elevation_count = ["D", "A", "B", "C"]
-                    #revit.doc.Regenerate()
-                    for i in range(4):
-                        try:
-                            elevation = new_marker.CreateElevation(revit.doc, osnova.Id, i)
-                            elevation.Scale = view_scale
-                            # Rename elevations
-                            elevation_name = eRoom.Number + separator + imeSobe + " - " + elevation_count[i]
-                            while helper.get_view(elevation_name):
-                                elevation_name = elevation_name + " Copy 1"
-                            
-                            elevation.Name = elevation_name
-                            elevations_col.append(elevation)
-                            helper.set_anno_crop(elevation)
-                        except:
-                            print("There was an error while creating Elevation views, for Room number:" + eRoom.Number)
-                            print("""- Check if a correct View Type exists and has been chosen, 
-                                - if there is any default Floor Views, 
-                                - or if the rooms are closed.
-                                (those have been the common errors till now)""")
-                                
-                # find crop box element (method with transactions, must be outside transaction)
-                #crop_box_el = helper.find_crop_box(osnova)
-                with revit.Transaction("Crop Plan", revit.doc):
-                    room_boundaries = helper.get_room_bound(eRoom)
-                    if room_boundaries:
-                        # try offsetting boundaries (to include walls in plan view)
-                        try:
-                            offset_boundaries = room_boundaries.CreateViaOffset(
-                                room_boundaries, chosen_crop_offset, DB.XYZ(0, 0, 1)
-                            )
-                            crop_shapeO = osnova.GetCropRegionShapeManager()
-                            crop_shapeO.SetCropShape(offset_boundaries)
-                            crop_shapeP = plafon.GetCropRegionShapeManager()
-                            crop_shapeP.SetCropShape(offset_boundaries)
-                            #revit.doc.Regenerate()
-                        # for some shapes the offset will fail, then use BBox method
-                        except:
-                            #revit.doc.Regenerate()
-                            # room bbox in this view
-                            new_bbox = eRoom.get_BoundingBox(osnova)
-                            osnova.CropBox = new_bbox
-                            plafon.CropBox = new_bbox
-                    # Rename Floor Plan
-                    osnova_name = eRoom.Number + separator + imeSobe + " - Osnova"
-                    plafon_name = eRoom.Number + separator + imeSobe + " - Plafon"
-
-                    while helper.get_view(osnova_name):
-                        osnova_name = osnova_name + " Copy 1"
-                    osnova.Name = osnova_name
-                    
-                    while helper.get_view(plafon_name):
-                        plafon_name = plafon_name + " Copy 1"
-                    plafon.Name = plafon_name
-                    
-                    # set view template and crop
-                    helper.set_anno_crop(osnova)
-                    helper.set_anno_crop(plafon)
-                    helper.apply_vt(osnova, chosen_vt_floor_plan)
-                    helper.apply_vt(plafon, chosen_vt_ceiling_plan)
-                    #revit.doc.Regenerate()
-
-                with revit.Transaction("Add Views to Sheet", revit.doc):
-                    # place view on sheet
-                    postavi_osnovu = DB.Viewport.Create(revit.doc, sheet.Id, osnova.Id, osnova_poz)
-                    postavi_plafon = DB.Viewport.Create(revit.doc, sheet.Id, plafon.Id, plafon_poz)
-
-                    for el, pos, i in izip(elevations_col, pogledi_poz, elevation_count):
-                        # place elevations
-                        place_elevation = DB.Viewport.Create(revit.doc, sheet.Id, el.Id, pos)
-                        # set viewport detail number
-                        place_elevation.get_Parameter(DB.BuiltInParameter.VIEWPORT_DETAIL_NUMBER).Set(i)
-                        #revit.doc.Regenerate()
+            with revit.Transaction("Drawing for room #" + eRoom.Number, revit.doc):
+            #Create Sheet
+                sheet = helper.create_sheet("04 - " + str(counter).zfill(2), eRoom.Number + imeSobe, chosen_tb.Id)
+                katcrteza = sheet.LookupParameter("KATEGORIJA CRTEZA")
+                katcrteza.Set('04 Pogledi')
+            # Create Floor Plan
+                osnova = DB.ViewPlan.Create(revit.doc, floor_plan_type.Id, level.Id)
+                #print(osnova.Name)
+                osnova.Scale = view_scale
+                osnova.CropBoxActive = True
+            # Create Ceiling Plan
+                plafon = DB.ViewPlan.Create(revit.doc, ceiling_plan_type.Id, level.Id)
+                plafon.Scale = view_scale
+                plafon.CropBoxActive = True
+            # Create Elevations
+                elevations_col = []
+                new_marker = DB.ElevationMarker.CreateElevationMarker(revit.doc, chosen_elevation_type.Id, room_location, view_scale)
+                elevation_count = ["D", "A", "B", "C"]
+                for i in range(4):
+                    try:
+                        elevation = new_marker.CreateElevation(revit.doc, osnova.Id, i)
+                        elevation.Scale = view_scale
+                        # Rename elevations
+                        elevation_name = eRoom.Number + separator + imeSobe + " - " + elevation_count[i]
+                        while helper.get_view(elevation_name):
+                            elevation_name = elevation_name + " Copy 1"
                         
-                with revit.Transaction("Room TAG", revit.doc):
-        # ROOM TAG               
-                    if chosen_tag_rooms == True:
-                        try:
-                            createRoomTag = revit.doc.Create.NewRoomTag(roomId, roomTagLocation, osnova.Id) 
-                            createRoomTag.ChangeTypeId(chosen_roomTag.Id)	   
-                        except:
-                            forms.alert("Rooms not tagged.", title="Error")
-                            pass
+                        elevation.Name = elevation_name
+                        elevations_col.append(elevation)
+                        helper.set_anno_crop(elevation)
+                    except:
+                        print("There was an error while creating Elevation views, for Room number:" + eRoom.Number)
+                        print("""- Check if a correct View Type exists and has been chosen, 
+                            - if there is any default Floor Views, 
+                            - or if the rooms are closed.
+                            (those have been the common errors till now)""")
+            # Crop Plan
+                room_boundaries = helper.get_room_bound(eRoom)
+                if room_boundaries:
+                    # try offsetting boundaries (to include walls in plan view)
+                    try:
+                        offset_boundaries = room_boundaries.CreateViaOffset(
+                            room_boundaries, chosen_crop_offset, DB.XYZ(0, 0, 1)
+                        )
+                        crop_shapeO = osnova.GetCropRegionShapeManager()
+                        crop_shapeO.SetCropShape(offset_boundaries)
+                        crop_shapeP = plafon.GetCropRegionShapeManager()
+                        crop_shapeP.SetCropShape(offset_boundaries)
+                    # for some shapes the offset will fail, then use BBox method
+                    except:
+                        # room bbox in this view
+                        new_bbox = eRoom.get_BoundingBox(osnova)
+                        osnova.CropBox = new_bbox
+                        plafon.CropBox = new_bbox
+            # Rename Floor Plan
+                osnova_name = eRoom.Number + separator + imeSobe + " - Osnova"
+                plafon_name = eRoom.Number + separator + imeSobe + " - Plafon"
+                while helper.get_view(osnova_name):
+                    osnova_name = osnova_name + " Copy 1"
+                osnova.Name = osnova_name
+                
+                while helper.get_view(plafon_name):
+                    plafon_name = plafon_name + " Copy 1"
+                plafon.Name = plafon_name
+                # set view template and crop
+                helper.set_anno_crop(osnova)
+                helper.set_anno_crop(plafon)
+                helper.apply_vt(osnova, chosen_vt_floor_plan)
+                helper.apply_vt(plafon, chosen_vt_ceiling_plan)
+            # Add Views to Sheet
+                postavi_osnovu = DB.Viewport.Create(revit.doc, sheet.Id, osnova.Id, osnova_poz)
+                postavi_plafon = DB.Viewport.Create(revit.doc, sheet.Id, plafon.Id, plafon_poz)
+                for el, pos, i in izip(elevations_col, pogledi_poz, elevation_count):
+                    # place elevations
+                    place_elevation = DB.Viewport.Create(revit.doc, sheet.Id, el.Id, pos)
+                    # set viewport detail number
+                    place_elevation.get_Parameter(DB.BuiltInParameter.VIEWPORT_DETAIL_NUMBER).Set(i)
                         
-                    #revit.doc.Regenerate()
+            # Room TAG               
+                if chosen_tag_rooms == True:
+                    try:
+                        createRoomTag = revit.doc.Create.NewRoomTag(roomId, roomTagLocation, osnova.Id) 
+                        createRoomTag.ChangeTypeId(chosen_roomTag.Id)	   
+                    except:
+                        forms.alert("Rooms not tagged.", title="Error")
+                        pass
             pb.update_progress(counter, max_value)
 else:
     Canceled()
