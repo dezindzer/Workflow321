@@ -2,20 +2,15 @@
 # inspiration and big part of the code is done by pyChilizer
 
 ### TO DO ###
-### ISO filter
+### create Plan types with script, dont relly on already created plan types.
 ### list sorting by room number
 ### hide elements outside crop
 
-from pyrevit import revit, DB, script, forms, HOST_APP
-#from pyrevit.revit.db import query
-from pyrevit.framework import List
+from pyrevit import revit, DB, script, forms
+#from pyrevit.framework import List
 from itertools import izip
-from rpw import ui
 from rpw.ui.forms import FlexForm, Label, TextBox, Button, ComboBox, Separator, CheckBox
-#from Autodesk.Revit import Exceptions
-import helper, math, units, sys
-
-version = HOST_APP.version
+import helper, units, sys
 
 def Canceled():
     forms.alert('User canceled the operation', title="Canceled", exitscript=True)
@@ -24,13 +19,13 @@ def GetCenterPoint(ele):
     bBox = ele.get_BoundingBox(None)
     return (bBox.Max + bBox.Min) / 2
 
-output = script.get_output()
-logger = script.get_logger()
-
-
 # collector - choose by hand or all rooms
 ops = ['All rooms', 'Choose rooms by hand']
 cfgs = {'All rooms': { 'background': '0xFF55FF'}}
+separator = " - "
+view_scale = 50
+url="https://bit.ly/GnezdoOrlovo" #still not over Breskvica
+
 chosen_selection_method = forms.CommandSwitchWindow.show(ops, message='Select Option',  config=cfgs, recognize_access_key=False )
 
 if chosen_selection_method == ops[0]:
@@ -41,35 +36,32 @@ elif chosen_selection_method == ops[1]:
     if not rooms:
         forms.alert("You need to select at least one Room.", exitscript=True)
 else:
-    #chosen_selection_method.close()
-    Canceled()
+    Canceled() #chosen_selection_method.close()
 
-# collector other
-osnove = DB.FilteredElementCollector(revit.doc).OfClass(DB.ViewPlan) 
-osnova_dict = {v.Name: v for v in osnove if v.IsTemplate}
-osnova_dict["<None>"] = None
-plafon_dict = {v.Name: v for v in osnove if v.IsTemplate}
-plafon_dict["<None>"] = None
-pogledi = DB.FilteredElementCollector(revit.doc).OfClass(DB.ViewSection) 
-viewsection_dict = {v.Name: v for v in pogledi if v.IsTemplate}
-viewsection_dict["<None>"] = None
+### Collectors for: View Templates displayed in the settings 
+# for floorplan and ceiling 
+viewPlans = DB.FilteredElementCollector(revit.doc).OfClass(DB.ViewPlan) 
+floorplan_template_dict = {v.Name: v for v in viewPlans if v.IsTemplate == True and v.ViewType == DB.ViewType.FloorPlan}
+floorplan_template_dict["<None>"] = None
+ceilingplan_template_dict = {v.Name: v for v in viewPlans if v.IsTemplate == True and v.ViewType == DB.ViewType.CeilingPlan}
+ceilingplan_template_dict["<None>"] = None
+# for view sections
+viewsections = DB.FilteredElementCollector(revit.doc).OfClass(DB.ViewSection) 
+viewsection_template_dict = {v.Name: v for v in viewsections if v.IsTemplate}
+viewsection_template_dict["<None>"] = None
 
-svaGledista = (DB.FilteredElementCollector(revit.doc).OfClass(DB.ViewFamilyType)) 
-
+### Collectors for: Annotation elements 
 titleblocks = DB.FilteredElementCollector(revit.doc).OfCategory(DB.BuiltInCategory.OST_TitleBlocks).WhereElementIsElementType()
 tblock_dict = {'{}: {}'.format(tb.FamilyName, revit.query.get_name(tb)): tb for tb in titleblocks}
-
 roomtagz = DB.FilteredElementCollector(revit.doc).OfCategory(DB.BuiltInCategory.OST_RoomTags).WhereElementIsElementType().ToElements()
 roomtag_dict = {'{}: {}'.format(rt.FamilyName, revit.query.get_name(rt)): rt for rt in roomtagz}
 
-floor_plan_type = [vt for vt in svaGledista.WhereElementIsElementType() if vt.FamilyName == "Floor Plan"][1]
-ceiling_plan_type = [vt for vt in svaGledista.WhereElementIsElementType() if vt.FamilyName == "Ceiling Plan"][0]
-elevation_type = [vt for vt in svaGledista.WhereElementIsElementType() if vt.FamilyName == "Elevation"][1] 
-allViews = DB.FilteredElementCollector(revit.doc).OfClass(DB.View).ToElements()
-firstView = allViews[1] # print(firstView)  print(DB.Element.Name.GetValue(firstView))
-#print(DB.Element.Name.GetValue(firstView))
-separator = " - "
-view_scale = 50
+### Collector for: Project Browser (Floor Plan, Ceiling Plan, Elevation View) Types
+allProjectBrowserTypes = (DB.FilteredElementCollector(revit.doc).OfClass(DB.ViewFamilyType)) 
+elevation_types = [vt for vt in allProjectBrowserTypes.WhereElementIsElementType() if vt.FamilyName == "Elevation"]
+elevation_types_dict = {'{}: {}'.format(et.FamilyName, revit.query.get_name(et)): et for et in elevation_types}
+floor_plan_type = [vt for vt in allProjectBrowserTypes.WhereElementIsElementType() if vt.FamilyName == "Floor Plan"][1] #ako nije modifikovano ništa, uzima tip Floorplan(Osnove)
+ceiling_plan_type = [vt for vt in allProjectBrowserTypes.WhereElementIsElementType() if vt.FamilyName == "Ceiling Plan"][0]
 
 # get units for Crop Offset variable
 if units.is_metric(revit.doc):
@@ -79,7 +71,6 @@ else:
     unit_sym = "Crop Offset [decimal inches]"
     default_crop_offset = 9
 
-
 components = [
     Label ("Select Titleblock"),
     ComboBox(name="tb", options=sorted(tblock_dict)), #default="Papir A2: A2 - SRB"),
@@ -87,17 +78,22 @@ components = [
     TextBox("crop_offset", Text=str(default_crop_offset)),
     Separator(),
     Label("View Template for Floor Plans"),
-    ComboBox(name="vt_floor_plans", options=sorted(osnova_dict)), #default="Osnova 1.50"),
+    ComboBox(name="vt_floor_plans", options=sorted(floorplan_template_dict)), #default="Osnova 1.50"),
     Label("View Template for Ceiling Plans"),
-    ComboBox(name="vt_ceiling_plans", options=sorted(plafon_dict)), #default="Plafoni 1.50"),  
+    ComboBox(name="vt_ceiling_plans", options=sorted(ceilingplan_template_dict)), #default="Plafoni 1.50"),  
     Label("View Template for Elevations"),
-    ComboBox(name="vt_elevs", options=sorted(viewsection_dict)),# default="Pogledi 1.50"),
+    ComboBox(name="vt_elevs", options=sorted(viewsection_template_dict)),# default="Pogledi 1.50"),
     Separator(),
     Label ("Tag Rooms"),
     CheckBox(name="tag_rooms", checkbox_text="", default=False),
     Label ("Select Room Tag"),
     ComboBox(name="rt", options=sorted(roomtag_dict)), #default="CRE Room Tag 50: 3. Number, Area"),
+    Separator(),
+    Label ("Select Elevation Type"),
+    ComboBox(name="et", options=sorted(elevation_types_dict)), #default="1. Pogledi"),
+    Separator(),
     Label(""),
+    CheckBox(name="Breskvica", checkbox_text="Play me", default=True),
     Button("Ok")
 ]
 
@@ -108,12 +104,18 @@ if viewSettings == True:
     sheet_number_start = 1
     chosen_crop_offset = units.correct_input_units(form.values["crop_offset"],  revit.doc)
     chosen_tb = tblock_dict[form.values["tb"]]
-    chosen_vt_floor_plan = osnova_dict[form.values["vt_floor_plans"]]
-    chosen_vt_ceiling_plan = plafon_dict[form.values["vt_ceiling_plans"]]
-    chosen_vt_elevation = viewsection_dict[form.values["vt_elevs"]]
+    chosen_vt_floor_plan = floorplan_template_dict[form.values["vt_floor_plans"]]
+    chosen_vt_ceiling_plan = ceilingplan_template_dict[form.values["vt_ceiling_plans"]]
+    chosen_vt_elevation = viewsection_template_dict[form.values["vt_elevs"]]
     #Room Tag
     chosen_roomTag = roomtag_dict[form.values["rt"]]
     chosen_tag_rooms = form.values["tag_rooms"]
+    #Elevation type
+    chosen_elevation_type = elevation_types_dict[form.values["et"]]
+    chosen_play_mode = form.values["Breskvica"]
+
+    if chosen_play_mode == True:
+        script.open_url(url)
 
     # approximate positions for viewports on an A2 sheet
     Xx = 0.8
@@ -126,14 +128,12 @@ if viewSettings == True:
         DB.XYZ(Xx, Xx, 0), #B
         DB.XYZ(-Xx, Yy, 0), #C
     ]
-
     if not rooms:
         sys.exit()
     rmcnt = [rmc for rmc in rooms if rmc.Area > 0]
     #print(rmcnt)
     max_value = len(rmcnt)
     counter = 0
-
     with forms.ProgressBar(title='Creating Sheet ... ({value} of {max_value})') as pb:
         for eRoom in rmcnt:  
             counter = counter + 1
@@ -157,6 +157,7 @@ if viewSettings == True:
                 with revit.Transaction("Create Room" + eRoom.Number, revit.doc):
                     # Create Floor Plan
                     osnova = DB.ViewPlan.Create(revit.doc, floor_plan_type.Id, level.Id)
+                    #print(osnova.Name)
                     osnova.Scale = view_scale
                     osnova.CropBoxActive = True
                     
@@ -167,12 +168,12 @@ if viewSettings == True:
 
                     # Create Elevations
                     elevations_col = []
-                    new_marker = DB.ElevationMarker.CreateElevationMarker(revit.doc, elevation_type.Id, room_location, view_scale)
+                    new_marker = DB.ElevationMarker.CreateElevationMarker(revit.doc, chosen_elevation_type.Id, room_location, view_scale)
                     elevation_count = ["D", "A", "B", "C"]
                     #revit.doc.Regenerate()
                     for i in range(4):
                         try:
-                            elevation = new_marker.CreateElevation(revit.doc, firstView.Id, i)
+                            elevation = new_marker.CreateElevation(revit.doc, osnova.Id, i)
                             elevation.Scale = view_scale
                             # Rename elevations
                             elevation_name = eRoom.Number + separator + imeSobe + " - " + elevation_count[i]
@@ -183,9 +184,12 @@ if viewSettings == True:
                             elevations_col.append(elevation)
                             helper.set_anno_crop(elevation)
                         except:
-                            #print("Greška u pravljenju elevationa. Proveriti da li postoje neophodne tipovi za elevation ( 1. Pogledi ) ili crtež osnove, ili da li su sve sobe zatvorene.")
-                            print(eRoom.Number)
-                
+                            print("There was an error while creating Elevation views, for Room number:" + eRoom.Number)
+                            print("""- Check if a correct View Type exists and has been chosen, 
+                                - if there is any default Floor Views, 
+                                - or if the rooms are closed.
+                                (those have been the common errors till now)""")
+                                
                 # find crop box element (method with transactions, must be outside transaction)
                 #crop_box_el = helper.find_crop_box(osnova)
                 with revit.Transaction("Crop Plan", revit.doc):
