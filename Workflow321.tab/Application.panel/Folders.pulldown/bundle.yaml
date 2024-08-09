@@ -8,3 +8,6 @@ layout:
   - CurrentUsersAddinsDataFolderPath
   - -----
   - FamilyTemplatePath
+  - -----
+  - RevitAcceleratorCacheModel
+  - -----
