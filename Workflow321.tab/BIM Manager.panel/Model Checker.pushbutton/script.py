@@ -10,7 +10,7 @@ matching_elementsA = [] # list to store the elements that match the criteria
 matching_elementsB = [] # list to store the elements that match the criteria
 matching_elementsC = [] # list to store the elements that match the criteria
 
-collector = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtainWallPanels) # filtered element collector
+collector = FilteredElementCollector(doc).WhereElementIsNotElementType().OfCategory(BuiltInCategory.OST_CurtainWallPanels) # filtered element collector
 
 for element in collector: # Iterate through the elements and check if they have the specified parameter
     paramA = element.LookupParameter("Sirina A") # Get the parameter to search for
