@@ -20,12 +20,12 @@ from RevitServices.Persistence import DocumentManager
 
 doc = DocumentManager.Instance.CurrentDBDocument
 
-for bic in Enum.GetValues(BuiltInCategory):
-    try:
-        cat = doc.Settings.Categories.get_Item(bic)
-        print(f"{bic}: {cat.Name}")
-    except:
-        print(f"{bic}: <no matching Category>")      
+# for bic in Enum.GetValues(BuiltInCategory):
+#     try:
+#         cat = doc.Settings.Categories.get_Item(bic)
+#         print(f"{bic}: {cat.Name}")
+#     except:
+#         print(f"{bic}: <no matching Category>")      
         
 # collect all family symbols (types) in the project
 #.OfClass(FamilySymbol)\
