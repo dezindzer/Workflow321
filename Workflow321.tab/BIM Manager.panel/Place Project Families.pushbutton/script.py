@@ -5,6 +5,8 @@ import clr
 from System import Enum
 clr.AddReference('RevitAPI')
 clr.AddReference('RevitServices')
+from pyrevit import revit, script
+from pyrevit.revit import doc
 #from pyrevit import revit, DB, script, forms
 #from rpw.ui.forms import FlexForm, Label, TextBox, Button, ComboBox, Separator, CheckBox
 from Autodesk.Revit.DB import (
@@ -18,7 +20,8 @@ from Autodesk.Revit.DB import (
 from Autodesk.Revit.DB.Structure import StructuralType
 from RevitServices.Persistence import DocumentManager
 
-doc = DocumentManager.Instance.CurrentDBDocument
+doc = revit.doc  # get the current Revit document
+
 
 # for bic in Enum.GetValues(BuiltInCategory):
 #     try:
