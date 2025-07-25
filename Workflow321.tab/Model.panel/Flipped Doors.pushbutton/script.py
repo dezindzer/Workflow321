@@ -16,6 +16,10 @@ def apply_vt(v, vt):
         v.ViewTemplateId = vt.Id
     return
 
+def GetCenterPoint(ele):
+    bBox = ele.get_BoundingBox(None)
+    return (bBox.Max + bBox.Min) / 2
+
 tits = "Flipped Doors"
 pogledi3D = DB.FilteredElementCollector(doc).OfClass(DB.View3D)
 
@@ -24,9 +28,16 @@ viewTemplate = {v.Name: v for v in pogledi3D if v.IsTemplate}
 first3Delement = pogledi3D.ToElements()
 first3DView = first3Delement[0]
 
+#FamSymbol = ToElements()
+
+FamSymbol = next(fs for fs in DB.FilteredElementCollector(doc).OfClass(DB.FamilySymbol).WhereElementIsElementType() if fs.FamilyName == "AAAA")
+
+
+print(FamSymbol)
+
 doors = DB.FilteredElementCollector(doc).OfCategory(DB.BuiltInCategory.OST_Doors).WhereElementIsNotElementType()
 flippedId = List[DB.ElementId]()
-familyType = next(vt for vt in DB.FilteredElementCollector(doc).OfClass(DB.ViewFamilyType).WhereElementIsElementType() if vt.FamilyName == "3D View" and Element.Name.__get__(vt) == "Flipped Doors")
+familyType = next(vt for vt in DB.FilteredElementCollector(doc).OfClass(DB.ViewFamilyType).WhereElementIsElementType() if vt.FamilyName == "3D View" and Element.Name.__get__(vt) == "3D View - Flipped Doors")
     # have to use the imported Element otherwise - AttributeError - occurs
 
 with Transaction(tits, doc):
@@ -59,8 +70,18 @@ with Transaction(tits, doc):
                                 flippedId.Add(revitID)
                                 wallHost= door.Host
                                 view = DB.View3D.CreateIsometric(doc, familyType.Id)
+                                view.SaveOrientationAndLock()
+                                doorPanelLocation = GetCenterPoint(door)
+                                familyInstanceRef = DB.Reference(door)
+                                tagOrientation = DB.TagOrientation.AnyModelDirection
+                                print(doorPanelLocation)
+                                locationZero = DB.XYZ(2.296120953, 0.997921127, 1.310517528)
+                                createDoorTag = DB.IndependentTag.Create(revit.doc, view.Id, familyInstanceRef, True, DB.TagMode.TM_ADDBY_CATEGORY, tagOrientation, doorPanelLocation)
+                                createDoorTag = DB.IndependentTag.Create(revit.doc, FamSymbol.Id ,view.Id, familyInstanceRef, True,  tagOrientation, doorPanelLocation)
+                                print(createDoorTag)
+                                
                                 apply_vt(view, viewTemplateFlip)
-                                BoundingBoxXYZ = wallHost.get_BoundingBox(view)                
+                                BoundingBoxXYZ = door.get_BoundingBox(view)                
                                 view.SetSectionBox(BoundingBoxXYZ)
                                 viewName = door_name + " - " + door_mark + " ID " + str(revitID)
                                 #loop za proveru da li ime vec postoji, ako da, napravi novi sa Copy 1 tagom
