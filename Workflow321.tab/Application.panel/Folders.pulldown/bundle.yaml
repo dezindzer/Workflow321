@@ -9,6 +9,6 @@ layout:
   - -----
   - FamilyTemplatePath
   - -----
-  - RevitAcceleratorCacheModel
+  - RevitAcceleratorCache
   - -----
-  - Desktop Connector
+  - DesktopConnector
