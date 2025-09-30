@@ -24,8 +24,8 @@ COS_COL = cos(radians(ANGLE_COL_DEG))
 TEETH_MAX_AREA = 6.0      # ft²
 NOTCH_DEPTH_MAX = 0.40    # ft
 
-PARAM_OUT = "1. Spoljašnji (IGM)"
-PARAM_IN  = "2. Unutrašnji (Holker)"
+PARAM_OUTSIDE  = "1. Spoljašnji (IGM)"
+PARAM_INSIDE = "2. Unutrašnji (Holker)"
 PARAM_PANELS = "Broj Zidnih Panela"  # integer
 
 
@@ -472,8 +472,8 @@ def main():
         return
 
     # Ensure params exist once
-    ok_out = _get_or_create_room_int_param(doc, PARAM_OUT)
-    ok_in  = _get_or_create_room_int_param(doc, PARAM_IN)
+    ok_in = _get_or_create_room_int_param(doc, PARAM_INSIDE)
+    ok_out  = _get_or_create_room_int_param(doc, PARAM_OUTSIDE)
 
     # Single transaction for all writes
     t = Transaction(doc, "Write room corner counts (outward/inward)")
@@ -496,12 +496,12 @@ def main():
             if pname: rmname = pname.AsString() or rmname
             
             # Writes
-            if ok_out:
-                p_out = room.LookupParameter(PARAM_OUT)
+            if ok_in:
+                p_out = room.LookupParameter(PARAM_INSIDE)
                 if p_out and p_out.StorageType == StorageType.Integer:
                     p_out.Set(int(outc))
-            if ok_in:
-                p_in = room.LookupParameter(PARAM_IN)
+            if ok_out:
+                p_in = room.LookupParameter(PARAM_OUTSIDE)
                 if p_in and p_in.StorageType == StorageType.Integer:
                     p_in.Set(int(inc))
                     
