@@ -514,7 +514,7 @@ def main():
                     p_pan.Set(int(panels_count))
                     
             # print as needed
-            print('- Room {} "{}": {} corners ({} out, {} in), panels: {}'
+            print('- Room {} "{}": {} corners ({} in, {} out), panels: {}'
                 .format(rmnum, rmname, totalc, outc, inc, panels_count))
             #print('- Room {} "{}": {} corners ({} outward, {} inward)'.format(rmnum, rmname, totalc, outc, inc))
         except Exception as ex:
