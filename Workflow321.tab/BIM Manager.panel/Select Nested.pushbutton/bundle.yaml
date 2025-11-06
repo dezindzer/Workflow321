@@ -1,0 +1,3 @@
+title: Select Nested
+tooltip: Select an element and recursively select all its subelements, excluding those in the "SITE" category.
+author: Nikola Marković

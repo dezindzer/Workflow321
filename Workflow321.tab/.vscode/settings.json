@@ -1,8 +1,10 @@
 {
-    "python.analysis.stubPath": "",
+    "python.analysis.stubPath": "C:\\Users\\nikola.markovic\\AppData\\Roaming\\RevitAPI stubs\\RVT 24", 
     "python.analysis.extraPaths": [
         "C:\\Program Files\\pyRevit-Master\\pyrevitlib",
+        "C:\\Users\\nikola.markovic\\AppData\\Roaming\\pyRevit-Master\\pyrevitlib",
         "E:\\GitHub\\STUBS\\RevitAPI stubs\\python-type-stubs-main\\stubs",
+        "C:\\Users\\nikola.markovic\\AppData\\Roaming\\RevitAPI stubs\\RVT 22",
         "./STUBS/stubs.min"
     ]
 }
