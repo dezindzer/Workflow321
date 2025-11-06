@@ -5,7 +5,7 @@ from pyrevit import revit, DB, script
 from pyrevit.revit import selection
 
 clr.AddReference("System")
-from System.Collections.Generic import List
+from System.Collections.Generic import List # type: ignore
 
 uidoc = revit.uidoc
 doc = revit.doc
@@ -28,12 +28,18 @@ def get_subelements(element, depth=0):
         subel = doc.GetElement(sid)
         if subel is None:
             continue
-
+        
+        # excluded category
         cat = subel.Category
-        is_site = cat is not None and cat.Name is not None and cat.Name.upper() == "SITE"
+        # is_excluded = cat is not None and cat.Name is not None and cat.Name.upper() == "SITE" or cat.Name.upper() == "ENTOURAGE"
+        is_excluded = (
+            cat is not None
+            and cat.Name is not None
+            and (cat.Name.upper() == "SITE" or cat.Name.upper() == "ENTOURAGE")
+        )
 
-        # only add if not SITE
-        if not is_site:
+        # only add if not excluded category
+        if not is_excluded:
             found.append(subel.Id)
            #output.print_md("  " * depth + "+ Added: {} ({})".format(subel.Id, cat.Name if cat else "No Category"))
 
