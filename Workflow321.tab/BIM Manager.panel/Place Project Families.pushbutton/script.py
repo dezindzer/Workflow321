@@ -1,73 +1,119 @@
-# This script for pyRevit/RevitPythonShell will place one instance of every loaded family
-# into the active document in a grid on the first available level.
-
-import clr
-from System import Enum
-clr.AddReference('RevitAPI')
-clr.AddReference('RevitServices')
-from pyrevit import revit, script
-from pyrevit.revit import doc
-#from pyrevit import revit, DB, script, forms
-#from rpw.ui.forms import FlexForm, Label, TextBox, Button, ComboBox, Separator, CheckBox
+# -*- coding: utf-8 -*-
 from Autodesk.Revit.DB import (
-    FilteredElementCollector,
-    FamilySymbol,
-    BuiltInCategory,
-    Level,
-    Transaction,
-    XYZ,
+    FilteredElementCollector, 
+    FamilySymbol, 
+    Level, 
+    XYZ, 
+    CategoryType,
+    Transaction
 )
 from Autodesk.Revit.DB.Structure import StructuralType
-from RevitServices.Persistence import DocumentManager
+from pyrevit import revit, forms, script
+import math
 
-doc = revit.doc  # get the current Revit document
+doc = revit.doc
 
+def is_model_category(category):
+    if category and category.CategoryType == CategoryType.Model:
+        exclude = ["Mass", "Shaft Opening", "Stairs Landing", "Stairs Run"]
+        return category.Name not in exclude
+    return False
 
-# for bic in Enum.GetValues(BuiltInCategory):
-#     try:
-#         cat = doc.Settings.Categories.get_Item(bic)
-#         print(f"{bic}: {cat.Name}")
-#     except:
-#         print(f"{bic}: <no matching Category>")      
-        
-# collect all family symbols (types) in the project
-#.OfClass(FamilySymbol)\
-symbols = FilteredElementCollector(doc)\
-    .OfCategory(BuiltInCategory.OST_Casework)\
-    .WhereElementIsElementType()\
-    .ToElements()
+def run():
+    # 1. Prikupljanje svih simbola za meni
+    all_symbols = FilteredElementCollector(doc).OfClass(FamilySymbol).ToElements()
+    cat_dict = {}
+    
+    # 2. Pronalaženje tvoje specijalne familije za naslov
+    # Tražimo simbol familije koja se zove "Model Text"
+    title_family_symbol = None
+    for s in all_symbols:
+        if s.Family.Name == "Model Text":
+            title_family_symbol = s
+            break
+            
+        # Grupisanje ostalih modela
+        if s.Category and is_model_category(s.Category):
+            cat_name = s.Category.Name
+            cat_dict.setdefault(cat_name, []).append(s)
 
-# pick a level to place on
-levels = FilteredElementCollector(doc)\
-    .OfClass(Level)\
-    .ToElements()
-if not levels:
-    raise Exception("No levels found in project")
-level = levels[0]
+    if not title_family_symbol:
+        forms.alert("Greška: Familija 'Model Text' nije pronađena u projektu.\nUčitaj familiju pa pokreni ponovo.")
+        return
 
-# grid parameters
-spacing = 10.0  # feet (or project units)
-cols = 10
+    # 3. UI Selekcija
+    selected_categories = forms.SelectFromList.show(
+        sorted(cat_dict.keys()),
+        title='Odaberi kategorije',
+        multiselect=True
+    )
+    if not selected_categories:
+        return
 
-t = Transaction(doc, "Place All Families")
-t.Start()
+    level = FilteredElementCollector(doc).OfClass(Level).FirstElement()
+    
+    # Parametri rasporeda
+    spacing = 20.0 
+    category_spacing = 60.0 
+    cols = 6
+    current_y_offset = 0
 
-x_idx = 0
-y_idx = 0
+    with revit.Transaction("Generisanje biblioteke sa 3D naslovima"):
+        # Aktiviraj simbol za naslov ako nije aktivan
+        if not title_family_symbol.IsActive:
+            title_family_symbol.Activate()
 
-for sym in symbols:
-    # activate symbol if not already
-    if not sym.IsActive:
-        sym.Activate()
-        doc.Regenerate()
-    # compute insertion point
-    pt = XYZ(x_idx * spacing, y_idx * spacing, 0)
-    # place an instance
-    doc.Create.NewFamilyInstance(pt, sym, level, StructuralType.NonStructural)
-    # advance grid
-    x_idx += 1
-    if x_idx >= cols:
-        x_idx = 0
-        y_idx += 1
+        for cat_name in selected_categories:
+            symbols = cat_dict[cat_name]
+            
+            # --- POSTAVLJANJE NASLOVA (Tvoja familija) ---
+            text_pos = XYZ(0, current_y_offset + 15, 0)
+            try:
+                # Postavljamo instancu tvoje familije
+                title_instance = doc.Create.NewFamilyInstance(
+                    text_pos, 
+                    title_family_symbol, 
+                    level, 
+                    StructuralType.NonStructural
+                )
+                
+                # Menjamo Instance parametar "Model Text"
+                # (Pretpostavljam da se parametar zove tačno tako, proveri mala/velika slova)
+                param = title_instance.LookupParameter("Model Text")
+                if param:
+                    param.Set(cat_name.upper())
+                else:
+                    print("Upozorenje: Parametar 'Model Text' nije pronađen na instanci.")
+            except Exception as e:
+                print("Greška pri postavljanju naslova: {}".format(e))
 
-t.Commit()
+            # --- GRID ZA FAMILIJE ---
+            x_idx = 0
+            y_idx = 0
+            for sym in symbols:
+                # Preskačemo samu familiju "Model Text" da je ne bismo ređali u gridu
+                if sym.Family.Name == "Model Text":
+                    continue
+
+                if not sym.IsActive:
+                    sym.Activate()
+                
+                pt = XYZ(x_idx * spacing, current_y_offset - (y_idx * spacing), 0)
+                try:
+                    doc.Create.NewFamilyInstance(pt, sym, level, StructuralType.NonStructural)
+                except:
+                    pass
+                
+                x_idx += 1
+                if x_idx >= cols:
+                    x_idx = 0
+                    y_idx += 1
+            
+            # Pomeranje offseta za sledeću kategoriju
+            num_rows = math.ceil(len(symbols) / float(cols)) if symbols else 1
+            current_y_offset -= (num_rows * spacing + category_spacing)
+
+    print("Uspešno kreirano sa 3D naslovima!")
+
+if __name__ == "__main__":
+    run()
